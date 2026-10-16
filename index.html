@@ -94,8 +94,8 @@ button{cursor:pointer}
 .interruttore input:checked::after{left:calc(var(--interruttore-l) - var(--interruttore-pomello) - var(--fuoco))}
 
 body:has(.velo) .toast{bottom:auto;top:var(--spazio-4)}
-.toast{position:fixed;left:var(--spazio-3);right:var(--spazio-3);bottom:var(--spazio-5);margin:0 auto;max-width:var(--larghezza-avviso);display:flex;align-items:center;gap:var(--spazio-3);justify-content:space-between;background:var(--colore-testo);color:var(--colore-sfondo);padding:var(--spazio-2) var(--spazio-2) var(--spazio-2) var(--spazio-4);border-radius:var(--raggio);font-weight:600;box-shadow:var(--ombra-alta);z-index:90;transform:translateY(var(--spazio-3));opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}
-.toast.on{opacity:1;transform:translateY(0)}
+.toast{position:fixed;left:var(--spazio-3);right:var(--spazio-3);bottom:var(--spazio-5);margin:0 auto;max-width:var(--larghezza-avviso);display:flex;align-items:center;gap:var(--spazio-3);justify-content:space-between;background:var(--colore-testo);color:var(--colore-sfondo);padding:var(--spazio-2) var(--spazio-2) var(--spazio-2) var(--spazio-4);border-radius:var(--raggio);font-weight:600;box-shadow:var(--ombra-alta);z-index:90;transform:translateY(var(--spazio-3));opacity:0;pointer-events:none;visibility:hidden;transition:opacity .2s,transform .2s,visibility 0s .2s} /* spento = non si raggiunge con il tasto Tab */
+.toast.on{opacity:1;transform:translateY(0);visibility:visible;transition-delay:0s}
 .toast.on .link{pointer-events:auto}
 .toast .link{color:var(--colore-marca-chiaro)}
 
@@ -733,6 +733,10 @@ p.info-ingr{min-height:0}
 
 /* versione 5: il menu si comanda dove lo vedi (15-INTUITIVITA) */
 .barra-azioni.tre{grid-template-columns:repeat(3,1fr)}
+.porz-nota{display:block;margin-top:var(--spazio-1)}
+.stato-giorno.st-pronto::before{background:transparent} /* programmato: pallino vuoto, online: pieno */
+.porz-nota:empty{display:none}
+.porz-nota .link{padding:0;min-height:var(--bersaglio)}
 /* scelto: un solo segno, scuro con ✓ (15-INTUITIVITA, regola 4) */
 .btn.scelto{background:var(--colore-testo);border-color:var(--colore-testo);color:var(--colore-sfondo)}
 .btn.scelto::before{content:"✓"}
@@ -1308,7 +1312,7 @@ function porz(r){return S.porz[r.id]||r.porzioni;}
 /* le basi si misurano in litri di resa, alcuni dolci in pezzi */
 function resaDi(r){return r.resa||(r.portata==='Basi'?'litri':'');}
 function nomePorz(r){var x=resaDi(r);return x==='litri'?'Litri':x==='pezzi'?'Pezzi':'Porzioni';}
-function perPorz(r,p){var x=resaDi(r);return x==='litri'?p+(p===1?' litro':' litri'):x==='pezzi'?p+(p===1?' pezzo':' pezzi'):p+(p===1?' porzione':' porzioni');}
+function perPorz(r,p){var x=resaDi(r), t=String(p).replace('.',',');return x==='litri'?t+(p===1?' litro':' litri'):x==='pezzi'?t+(p===1?' pezzo':' pezzi'):t+(p===1?' porzione':' porzioni');}
 /* quantità scritte come le scrive uno chef: 1.200 o 1'200 (migliaia), 0,5, 1/2, 1 1/2, ½ */
 var FRAZ={'½':0.5,'¼':0.25,'¾':0.75,'⅓':1/3,'⅔':2/3};
 function leggiNumero(t,u){ t=String(t==null?'':t).trim(); if(!t) return null; var m;
@@ -1340,7 +1344,7 @@ function unitaTipica(n){ var w=piega(n);
 /* testo per cercare: minuscolo e senza accenti («bona» trova «bóna») */
 function piega(t){ return chiave(t).normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
 function infoIngr(i,visti){
-  if(i.base){var b=ric(i.base); if(b){var a=analisi(b,Object.assign({},visti||{})); return {tipo:a.tipoMax,all:a.all,prov:a.prov,noto:!a.mancano.length,baseIncompleta:!!a.mancano.length,base:true};} }
+  if(i.base){var b=ric(i.base); if(b){var a=analisi(b,Object.assign({},visti||{})); return {tipo:a.tipoMax,all:a.all,prov:a.prov,noto:!a.mancano.length,baseIncompleta:!!a.mancano.length,base:true,caglio:!!a.tipi.caglio};} }
   if(i.tipo) return {tipo:i.tipo,all:unici((i.all||[]).concat(allergeniDelTipo(i.tipo))),prov:i.prov?[i.prov]:[],noto:true};
   var d=S.diz[chiave(i.nome)];
   if(d) return {tipo:d.tipo,all:unici(d.all.concat(allergeniDelTipo(d.tipo))),prov:i.prov?[i.prov]:[],noto:true,proposta:d.proposta};
@@ -1548,7 +1552,7 @@ function disegnaElenco(){
   var el=$('#elenco'); if(!el) return;
   var tutte=visibiliPerRuolo(), lista=filtrate();
   if(S.sel&&!lista.some(function(r){return r.id===S.sel;})&&S.modo==='leggi'&&window.innerWidth>760&&!(S.torna&&S.torna.a===S.sel)&&!S.tornaMenu){ S.sel=lista.length?lista[0].id:null; setTimeout(disegnaPagina,0); }
-  var portatePresenti=PORTATE.filter(function(p){return tutte.some(function(r){return r.portata===p;});});
+  var portatePresenti=PORTATE.concat(S.portateExtra).filter(function(p){return tutte.some(function(r){return r.portata===p;});});
   var nf=quantiFiltri(), att=chipsAttivi();
   /* testata: titolo e un solo bottone; sotto la ricerca con i filtri dentro; sotto le portate */
   var h='<div class="testa-elenco"><div class="titolo-elenco">'+bottoneLato()+'<h2>'+(eChef()?'Ricettario':'Ricette condivise')+'</h2></div>'+
@@ -1565,7 +1569,12 @@ function disegnaElenco(){
   }
   el.innerHTML=h;
   /* la ricerca aggiorna solo l'elenco: il campo non si ricrea mentre si scrive */
-  var q=$('#q'); if(q){ q.oninput=function(){S.q=q.value;var l=filtrate();$('.righe',el).innerHTML=righeHTML(l);$('.conta',el).textContent=contaTesto(l,visibiliPerRuolo());legaRighe(el);}; }
+  var q=$('#q'); if(q){ q.oninput=function(){S.q=q.value;var l=filtrate();$('.righe',el).innerHTML=righeHTML(l);$('.conta',el).textContent=contaTesto(l,visibiliPerRuolo());legaRighe(el);
+    /* RC-19: sul computer la ricetta aperta segue la ricerca */
+    if(window.innerWidth>760&&S.modo==='leggi'){ if(S.selPrima===undefined||S.selPrima===null) S.selPrima=S.sel;
+      var prima=S.selPrima, vuole=!S.q.trim()?prima:(l.some(function(r){return r.id===prima;})?prima:(l.some(function(r){return r.id===S.sel;})?S.sel:(l.length?l[0].id:null)));
+      if(!S.q.trim()) S.selPrima=null;
+      if(vuole!==S.sel||!l.length){ S.sel=vuole; S.torna=null; S.tornaMenu=null; disegnaPagina(); $$('.riga-ric',el).forEach(function(b){b.setAttribute('aria-current',String(b.dataset.id===S.sel));}); } } }; }
   $$('[data-portata]',el).forEach(function(b){b.onclick=function(){S.portata=b.dataset.portata;disegnaElenco();};});
   /* portate: la rotella del mouse scorre di lato; la sfumatura a destra c'è solo se ce ne sono altre */
   var rp=$('.portate',el); if(rp){ var segna=function(){rp.classList.toggle('continua',rp.scrollLeft+rp.clientWidth<rp.scrollWidth-2);};
@@ -1613,7 +1622,7 @@ function righeHTML(lista){return lista.length?lista.map(function(r){var a=analis
       return '<button class="riga-ric" data-id="'+r.id+'" aria-current="'+(r.id===S.sel)+'">'+piattoHTML(r)+
        '<span><b>'+esc(r.nome||'Ricetta senza titolo')+'</b><small>'+sing(r.portata)+' · '+r.stagione+(a.mancano.length?' · da completare':'')+'</small></span>'+
        (r.condivisa||S.ruolo==='tutti'?'':'<span class="privata">Privata</span>')+'</button>';}).join(''):'<p class="auto-nota">Nessuna ricetta con questi filtri.</p>';}
-function legaRighe(el){$$('.riga-ric',el).forEach(function(b){b.onclick=function(){if(b.dataset.id!==S.sel)pulisciVuota();S.tornaMenu=null;S.torna=null;S.sel=b.dataset.id;S.modo='leggi';disegnaRicettario();if(window.innerWidth<=760)window.scrollTo(0,0);};});}
+function legaRighe(el){$$('.riga-ric',el).forEach(function(b){b.onclick=function(){if(b.dataset.id!==S.sel)pulisciVuota();S.tornaMenu=null;S.torna=null;S.selPrima=null;S.sel=b.dataset.id;S.modo='leggi';disegnaRicettario();if(window.innerWidth<=760)window.scrollTo(0,0);};});}
 function apriFinestra(velo,chiudi){ var da=document.activeElement, sel=selettoreDi(da);
   velo._chiudi=function(){chiudi(); rimettiFuoco(da,sel);}; }
 /* il bottone di partenza può essere stato ridisegnato: si cerca quello uguale (stesso id o stessi attributi data-) */
@@ -1647,7 +1656,7 @@ function disegnaPagina(){
   var pg=$('#pagina'); if(!pg) return;
   if(S.modo==='incolla'){disegnaIncolla(pg);return;}
   var r=ric(S.sel); if(r&&!eChef()&&!r.condivisa) r=null;
-  if(!r){ pg.innerHTML=visibiliPerRuolo().length?'<div class="vuoto"><b>Scegli una ricetta.</b><span>La trovi nell’elenco a sinistra.</span></div>':(eChef()?'<div class="vuoto"><b>Il tuo ricettario è vuoto.</b><span>Una ricetta scritta una volta si usa nel menu, nella stampa e nel libro.</span><button class="btn pieno" id="prima">Scrivi la prima ricetta</button><button class="btn quieto" id="prima-incolla">Incolla una ricetta</button></div>':'');
+  if(!r){ pg.innerHTML=visibiliPerRuolo().length?(S.q&&!filtrate().length?'<div class="vuoto"><b>Nessuna ricetta con «'+esc(S.q)+'».</b><span>Prova un’altra parola o un ingrediente.</span></div>':'<div class="vuoto"><b>Scegli una ricetta.</b><span>La trovi nell’elenco a sinistra.</span></div>'):(eChef()?'<div class="vuoto"><b>Il tuo ricettario è vuoto.</b><span>Una ricetta scritta una volta si usa nel menu, nella stampa e nel libro.</span><button class="btn pieno" id="prima">Scrivi la prima ricetta</button><button class="btn quieto" id="prima-incolla">Incolla una ricetta</button></div>':'');
     if($('#prima')) $('#prima').onclick=nuovaRicetta;
     if($('#prima-incolla')) $('#prima-incolla').onclick=function(){S.modo='incolla';disegnaRicettario();};
     return; }
@@ -1670,9 +1679,10 @@ function disegnaPagina(){
      (mia?'<div class="altro"><button class="azione" id="altro-ric" aria-haspopup="true">'+ICONE.altro+'<span>Altro</span></button><div class="menu-altro" id="menu-altro-ric" hidden><button id="stampa-a4">Stampa la ricetta (A4)</button><button id="stampa-a5">Stampa la ricetta (A5)</button><button id="duplica">Fai una copia</button></div></div>':
        '<button class="azione" id="stampa-a4">'+ICONE.stampante+'<span>Stampa la ricetta</span></button>')+'</div>'+
    (a.mancano.length?'<div class="avviso">Da completare: '+a.mancano.map(esc).join(', ')+'. Poi la ricetta può andare nel menu.'+(mia?' <button class="link" id="completa">Completa</button>':'')+'</div>':'')+
-   '<div class="meta"><div><small>'+nomePorz(r)+'</small><div class="stepper" role="group" aria-label="'+nomePorz(r)+'"><button id="meno" aria-label="Meno">−</button><input id="np" class="np" inputmode="numeric" value="'+p+'" aria-label="'+nomePorz(r)+'"><button id="piu" aria-label="Di più">+</button></div></div>'+
+   '<div class="meta"><div><small>'+nomePorz(r)+'</small><div class="stepper" role="group" aria-label="'+nomePorz(r)+'"><button id="meno" aria-label="Meno">−</button><input id="np" class="np" inputmode="decimal" value="'+numPorz(p)+'" aria-label="'+nomePorz(r)+'"><button id="piu" aria-label="Di più">+</button></div></div>'+
     (r.tempo?'<div><small>Tempo</small><b>'+esc(r.tempo)+'</b></div>':'')+
 '</div>'+
+   '<small class="auto-nota porz-nota" id="porz-nota">'+origPorzHTML(r)+'</small>'+
    '<div class="colonne"><div><h3>Ingredienti</h3><ul class="ingr" id="lista-ingr">'+ingrHTML(r,p)+'</ul></div>'+
    '<div><h3>Preparazione</h3><ol class="passi">'+r.passi.filter(function(s){return s.trim();}).map(function(s){return '<li>'+esc(s)+'</li>';}).join('')+'</ol></div></div>'+
    '<div class="riquadro">'+
@@ -1685,9 +1695,11 @@ function disegnaPagina(){
   pg.innerHTML=h;
   $('#indietro').onclick=function(){ if(torna){ S.sel=torna.id; S.torna=null; } else if(daMenu){ S.tornaMenu=null; S.vista='oggi'; S.oggiGiorno=daMenu; disegna(); window.scrollTo(0,0); return; } else S.sel=null; disegnaRicettario(); window.scrollTo(0,0); };
   $$('[data-vai-menu]',pg).forEach(function(b){b.onclick=function(){ var x=b.dataset.vaiMenu.split('|'); vaiAlMenu(x[0],x[1]); };});
-  $('#meno').onclick=function(){S.porz[r.id]=Math.max(1,porz(r)-1);aggiornaPorz(r);};
-  $('#piu').onclick=function(){S.porz[r.id]=Math.min(999,porz(r)+1);aggiornaPorz(r);};
-  $('#np').onchange=function(){ var v=Math.round(leggiNumero(this.value)); if(!(v>=1)){ this.value=porz(r); return; } S.porz[r.id]=Math.min(999,v); aggiornaPorz(r); };
+  var passo=resaDi(r)==='litri'?0.5:1; /* RC-11: una base in litri si prepara anche a mezzi litri */
+  $('#meno').onclick=function(){S.porz[r.id]=Math.max(passo,Math.round((porz(r)-passo)*10)/10);aggiornaPorz(r);};
+  $('#piu').onclick=function(){S.porz[r.id]=Math.min(999,Math.round((porz(r)+passo)*10)/10);aggiornaPorz(r);};
+  $('#np').onchange=function(){ var n=leggiNumero(this.value,'l'), dec=resaDi(r)==='litri'?0.1:1, v=n==null?NaN:Math.round(n/dec)*dec; v=Math.round(v*10)/10; if(!(v>=dec)){ this.value=numPorz(porz(r)); return; } S.porz[r.id]=Math.min(999,v); aggiornaPorz(r); };
+  if($('#porz-orig')) $('#porz-orig').onclick=function(){ delete S.porz[r.id]; aggiornaPorz(r); };
   $('#np').onkeydown=function(e){ if(e.key==='Enter') this.blur(); };
   if($('#conferma')) $('#conferma').onclick=function(){S.conferme[r.id]=true;disegnaPagina();};
   if($('#togli')) $('#togli').onclick=function(){S.conferme[r.id]=false;disegnaPagina();};
@@ -1711,7 +1723,10 @@ function doveNelMenu(id){ var l=[]; giorni().forEach(function(d){ if(chiuso(d.k)
 function vaiAlMenu(k,serv){ chiudiToast(); S.tornaMenu=null; S.vista='oggi'; S.oggiGiorno=k; disegna(); var x=serv&&$('[data-serv="'+serv+'"]'); if(x){ x.scrollIntoView({block:'start'}); var f=$('h3',x); } else window.scrollTo(0,0); }
 function ingrHTML(r,p){return r.ingr.filter(function(i){return String(i.nome||'').trim();}).map(function(i){
    return '<li><span>'+(i.base?'<button class="link base" data-apri="'+i.base+'" title="Apri la ricetta base">'+esc(i.nome)+'</button>':esc(i.nome))+(i.base&&S.numeriLibro&&S.numeriLibro[i.base]?' (ricetta '+S.numeriLibro[i.base]+')':'')+(i.prov?'<span class="prov">'+esc(i.prov)+'</span>':'')+'</span><span class="q">'+qta(i,r,p)+'</span></li>';}).join('');}
-function aggiornaPorz(r){$('#np').value=porz(r);$('#lista-ingr').innerHTML=ingrHTML(r,porz(r));legaBasi();}
+function numPorz(v){ return String(v).replace('.',','); }
+/* RC-21: la quantità della ricetta scritta e quella che si sta preparando, distinte */
+function origPorzHTML(r){ var p=porz(r); return p!==r.porzioni?'Ricetta scritta per '+numPorz(r.porzioni)+' '+nomePorz(r).toLowerCase()+' · <button class="link" id="porz-orig">Torna a '+numPorz(r.porzioni)+'</button>':''; }
+function aggiornaPorz(r){$('#np').value=numPorz(porz(r));$('#lista-ingr').innerHTML=ingrHTML(r,porz(r));legaBasi(); var o=$('#porz-nota'); if(o){ o.innerHTML=origPorzHTML(r); var b=$('#porz-orig'); if(b) b.onclick=function(){ delete S.porz[r.id]; aggiornaPorz(r); }; }}
 function legaBasi(){$$('#lista-ingr [data-apri]').forEach(function(b){b.onclick=function(){S.torna={da:S.sel,a:b.dataset.apri};S.sel=b.dataset.apri;S.modo='leggi';disegnaRicettario();window.scrollTo(0,0);};});}
 
 function eliminaRicetta(r){
@@ -1778,7 +1793,9 @@ function infoPiatto(p){
   else if(p.ric&&p.snap){ out={nome:p.snap.nome,all:p.snap.all,prov:p.snap.prov,dieta:p.snap.dieta,mancano:[],collegato:false}; }
   else { var m=p.man||{all:[],nessuno:false,carne:null,prov:'',veg:false}, manca=[];
     if(!m.nessuno&&!m.all.length) manca.push('allergeni');  if(m.carne===null) manca.push('carne o pesce?'); if(m.carne&&!provBuona(m.prov)) manca.push('provenienza');
-    out={nome:p.nome,all:m.nessuno?[]:m.all.slice(),prov:m.carne&&m.prov?[m.prov]:[],dieta:m.veg&&!m.carne?(m.veg==='Vegano'?'Vegano':'Vegetariano'):null,mancano:manca,collegato:false}; }
+    var conAnimali=m.all.some(function(a){return /^(Latte|Uova|Pesce|Crostacei|Molluschi)$/.test(a);});
+    /* «Vegano» con latte o uova si contraddice: non va ai clienti (RC-05) */
+    out={nome:p.nome,all:m.nessuno?[]:m.all.slice(),prov:m.carne&&m.prov?[m.prov]:[],dieta:m.veg&&!m.carne?(m.veg==='Vegano'?(conAnimali?null:'Vegano'):'Vegetariano'):null,mancano:manca,collegato:false}; }
   if(p.nome&&p.ric) out.nome=p.nome; /* nome cambiato solo nel menu */
   if(p.alt){ var b=ric(p.alt); if(b){ var ab=analisi(b), db=S.conferme[b.id]===true?dieta(ab):null; out.alt={nome:b.nome,all:ab.all,prov:ab.prov,mancano:ab.mancano,dieta:db}; ab.mancano.forEach(function(x){out.mancano.push(b.nome+': '+x);});
     out.dieta=!out.dieta||!db?null:(out.dieta==='Vegano'&&db==='Vegano'?'Vegano':'Vegetariano'); } }
@@ -1823,14 +1840,27 @@ function suggerimenti(k,serv){ var st=stagioneDi(dataDa(k)), m=menuDi(k,serv);
    .sort(function(a,b){var x=ultimaVolta(a.id),y=ultimaVolta(b.id);return (y===null?999:y)-(x===null?999:x);}).reverse().slice(0,4); }
 /* l'ultimo menu dello stesso servizio, prima di quel giorno: dai giorni della settimana o dallo storico */
 function ultimoMenu(k,serv){ var cand=[];
-  Object.keys(S.menu).forEach(function(x){ if(x<k&&S.menu[x][serv]&&S.menu[x][serv].piatti.length&&S.menu[x][serv].stato==='online') cand.push({k:x,fisso:S.menu[x][serv].fisso,piatti:S.menu[x][serv].piatti.map(function(p){return {ric:p.ric,prezzo:p.prezzo,man:p.man,nome:p.nome,portata:p.portata};})}); });
+  Object.keys(S.menu).forEach(function(x){ if(x<k&&S.menu[x][serv]&&S.menu[x][serv].piatti.length&&S.menu[x][serv].stato==='online') cand.push({k:x,fisso:S.menu[x][serv].fisso,piatti:S.menu[x][serv].piatti.map(datiPiatto)}); });
   Object.keys(S.storico).forEach(function(x){ if(x<k&&(S.storico[x][serv]||[]).length) cand.push({k:x,piatti:S.storico[x][serv]}); });
   cand.sort(function(a,b){return a.k<b.k?1:-1;}); return cand[0]||null; }
-function copiaMenu(k,serv,da){ var m=menuDi(k,serv,true), n=0;
-  da.piatti.forEach(function(x){ if(x.ric){ if(ric(x.ric)&&aggiungiAlMenu(k,serv,x.ric,true)){n++; var p=m.piatti[m.piatti.length-1]; if(x.prezzo!=null) p.prezzo=x.prezzo;} }
-    else { m.piatti.push(nuovoPiatto({nome:x.nome,portata:x.portata,prezzo:x.prezzo,man:clona(x.man)})); n++; } });
+/* i dati di un piatto da copiare: tutto tranne l'identità e lo stato del giorno (finito) */
+function datiPiatto(p){ return {ric:p.ric,nome:p.nome||'',descr:p.descr||'',portata:p.portata,prezzo:p.prezzo,mezza:p.mezza!=null?p.mezza:null,alt:p.alt||null,man:p.man?clona(p.man):null,snap:p.snap?clona(p.snap):null}; }
+/* copia: tutti i campi (RC-02); i piatti già presenti non si ripetono, anche quelli scritti a mano (RC-03);
+   un piatto la cui ricetta non c'è più passa come piatto scritto a mano, con i dati che aveva (RC-04) */
+function copiaMenu(k,serv,da){ var m=menuDi(k,serv,true), out={n:0,gia:[],aMano:[]};
+  out.persi=0;
+  da.piatti.forEach(function(x){ var r=x.ric&&ric(x.ric), nome=x.nome||(r?r.nome:(x.snap?x.snap.nome:''));
+    if(r){ if(m.piatti.some(function(p){return p.ric===x.ric;})){ out.gia.push(nome); return; }
+      m.piatti.push(nuovoPiatto({ric:x.ric,nome:x.nome||'',descr:x.descr||'',portata:x.portata||r.portata,prezzo:x.prezzo!=null?x.prezzo:(S.prezzi[x.ric]!=null?S.prezzi[x.ric]:null),mezza:x.mezza!=null?x.mezza:null,alt:x.alt&&ric(x.alt)?x.alt:null}));
+      r.usi=(r.usi||0)+1; out.n++; return; }
+    var man=x.man?clona(x.man):null, daRicetta=false;
+    if(!man&&x.snap){ man={all:x.snap.all.slice(),nessuno:!x.snap.all.length,carne:x.snap.prov.length>0,prov:x.snap.prov.join('; '),veg:x.snap.dieta||false}; daRicetta=true; }
+    if(!man){ out.persi++; return; } /* dallo storico, ricetta eliminata e nessun dato: non si inventa, lo si dice */
+    if(m.piatti.some(function(p){return !p.ric&&chiave(p.nome)===chiave(nome)&&p.portata===x.portata;})){ out.gia.push(nome); return; }
+    if(daRicetta) out.aMano.push(nome);
+    m.piatti.push(nuovoPiatto({nome:nome,descr:x.descr||'',portata:x.portata,prezzo:x.prezzo,mezza:x.mezza!=null?x.mezza:null,man:man})); out.n++; });
   if(da.fisso&&!m.fisso) m.fisso=clona(da.fisso);
-  return n; }
+  return out; }
 
 function nuovoStatoOggi(vuoto){
   S.locale=locale0(vuoto); S.portateExtra=[]; S.invito=null; S.tavoli=null; S.tavoliNumeri=true; S.tavoliStampati=false; S.prezzi={}; S.storico={}; S.menu={}; S.oggiGiorno=null; S.oggiAperto=null;
@@ -1908,9 +1938,9 @@ function disegnaOggi(){
   legaOggi(k);
 }
 /* lo stato di ogni servizio in una parola (un servizio non nasconde l'altro) */
-function parolaServ(k,s){ var st=statoMenu(k,s); return st==='online'||st==='pronto'?'online':st==='bozza'?'non online':'vuoto'; }
+function parolaServ(k,s){ var st=statoMenu(k,s); return st==='online'?'online':st==='pronto'?'programmato':st==='bozza'?'non online':'vuoto'; }
 function righeGiorno(k){ if(chiuso(k)) return '<span class="stato-giorno st-chiuso" aria-hidden="true">Chiuso</span>';
-  var due=serviziAttivi().length>1, corto={online:'online',pronto:'online',bozza:'non online',vuoto:'vuoto'}; /* le stesse parole dell'interruttore */
+  var due=serviziAttivi().length>1, corto={online:'online',pronto:'programmato',bozza:'non online',vuoto:'vuoto'}; /* le stesse parole dell'interruttore */
   return serviziAttivi().map(function(s){ var st=statoMenu(k,s); return '<span class="stato-giorno st-'+st+'" aria-hidden="true">'+(due?nomeServ(s)+': '+corto[st]:corto[st].replace(/^./,function(c){return c.toUpperCase();}))+'</span>'; }).join(''); }
 /* quando va online un menu pronto: «alle 00.00 di venerdì 16» (mezzanotte da sola si legge in due modi) */
 function quandoOnline(k){ var d=dataDa(k); return 'alle 00.00 di '+GIORNI_SETT[d.getDay()]+' '+d.getDate(); }
@@ -1956,7 +1986,7 @@ function cartaServizio(k,s){
 /* l'interruttore «Online» nella testa del servizio: un tocco mette online o toglie (rif. 15-INTUITIVITA, regole 2 e 3) */
 function interruttoreOnline(k,s,st){
   if(st==='vuoto') return '';
-  var acceso=st==='online'||st==='pronto', testo=st==='online'?'Online':st==='pronto'?'Online da '+GIORNI_SETT[dataDa(k).getDay()]+' '+dataDa(k).getDate():'Non online';
+  var acceso=st==='online'||st==='pronto', testo=st==='online'?'Online':st==='pronto'?'Programmato':'Non online';
   if(!puoPubblicare()) return '<span class="stato-pill st-'+st+'">'+testo+'</span>'+(acceso?'':'<small class="auto-nota">Lo mette online il proprietario</small>');
   return '<button class="interruttore-online" role="switch" aria-checked="'+acceso+'" '+(acceso?'data-ritira':'data-pubblica')+'="'+s+'" aria-label="'+nomeServ(s)+' '+(giorniFa(k)===0?'di oggi':'di '+quandoTesto(k))+': '+testo+'"><span class="traccia" aria-hidden="true"></span><span>'+testo+'</span></button>'; }
 /* prezzo fisso: completo = una riga con «Modifica»; altrimenti aperto */
@@ -2075,9 +2105,9 @@ function cambiaGiorno(k,come){ var e=S.locale.eccezioni=S.locale.eccezioni||{}, 
 function giornoParola(x){ var n=-giorniFa(x), d=dataDa(x); if(n===-1) return 'ieri'; if(n<-6) return GIORNI_SETT[d.getDay()]+' '+d.getDate()+' '+MESI[d.getMonth()]; return quandoTesto(x); }
 /* copia un menu già fatto: dalla settimana (anche il pranzo nella cena) o dalle ultime settimane */
 function candidatiCopia(k,serv){ var l=[], visti={};
-  var nomi=function(ps){ return ps.map(function(x){ var r=x.ric&&ric(x.ric); return r?r.nome:x.nome; }).filter(Boolean); };
+  var nomi=function(ps){ return ps.map(function(x){ var r=x.ric&&ric(x.ric); return x.nome||(r?r.nome:(x.snap?x.snap.nome:'')); }).filter(Boolean); };
   Object.keys(S.menu).sort().forEach(function(x){ ['pranzo','cena'].forEach(function(sv){ var m=S.menu[x][sv]; if(!m||!m.piatti.length||(x===k&&sv===serv)) return;
-    l.push({k:x,serv:sv,fisso:m.fisso,piatti:m.piatti.map(function(p){return {ric:p.ric,prezzo:p.prezzo,man:p.man,nome:p.nome,portata:p.portata};}),nomi:nomi(m.piatti)}); visti[x+sv]=1; }); });
+    l.push({k:x,serv:sv,fisso:m.fisso,piatti:m.piatti.map(datiPiatto),nomi:nomi(m.piatti)}); visti[x+sv]=1; }); });
   /* dai menu già serviti: solo quelli veri (almeno 3 piatti), i 6 più recenti */
   var serviti=0; Object.keys(S.storico).sort().reverse().forEach(function(x){ ['pranzo','cena'].forEach(function(sv){ var ps=S.storico[x][sv]||[]; if(ps.length<3||visti[x+sv]||serviti>=6) return; serviti++; l.push({k:x,serv:sv,piatti:ps,nomi:nomi(ps)}); }); });
   return l; }
@@ -2095,8 +2125,9 @@ function apriCopia(k,serv){
   var chiudi=function(){velo.remove();ridisegnaOggi();};
   $$('[data-copia-questo]',velo).forEach(function(b){b.onclick=function(){ var c=l[+b.dataset.copiaQuesto], m=menuDi(k,serv,true), vecchi=m.piatti.slice(), fissoPrima=m.fisso;
     if(m.stato==='online'&&!puoPubblicare()){ toast('Quel menu è online: lo cambia il proprietario.'); return; }
-    var n=copiaMenu(k,serv,c); if(m.stato==='online') m.aggiornato=true; velo.remove(); ridisegnaOggi();
-    toast(n?(n===1?'1 piatto copiato':n+' piatti copiati')+(m.stato==='online'&&giorniFa(k)===0?': è già online.':'.'):'Nessun piatto nuovo: c’erano già tutti.',n?function(){m.piatti=vecchi;m.fisso=fissoPrima;ridisegnaOggi();}:null); };});
+    var esito=copiaMenu(k,serv,c), n=esito.n; if(m.stato==='online') m.aggiornato=true; velo.remove(); ridisegnaOggi();
+    var dettagli=(esito.gia.length?' '+(esito.gia.length===1?'1 c’era già':esito.gia.length+' c’erano già')+': '+esito.gia.join(', ')+'.':'')+(esito.aMano.length?' '+esito.aMano.join(', ')+': la ricetta non c’è più, copiato come piatto scritto a mano.':'')+(esito.persi?' '+(esito.persi===1?'1 piatto non copiato: la sua ricetta':esito.persi+' piatti non copiati: le loro ricette')+' non c’è più.':'');
+    toast(n?(n===1?'1 piatto copiato':n+' piatti copiati')+(m.stato==='online'&&giorniFa(k)===0?', già online.':'.')+dettagli:'Nessun piatto nuovo.'+dettagli,n?function(){m.piatti=vecchi;m.fisso=fissoPrima;ridisegnaOggi();}:null); };});
   $('#copia-annulla',velo).onclick=chiudi;
   apriFinestra(velo,chiudi); velo.onclick=function(e){if(e.target===velo)chiudi();};
   document.body.appendChild(velo); var f=$('[data-copia-questo]',velo)||$('#copia-annulla',velo); f.focus();
@@ -2179,7 +2210,7 @@ function piattoAMano(k,serv,esistente,poi){
        return manca.length?'<p class="nota-legge">Dal nome ('+dd.chiavi.map(esc).join(', ')+'): '+manca.join(', ')+'? <button class="link" data-mp-proponi="'+manca.join('|')+'">Aggiungi</button></p>':''; })()+
      '<div class="campo"><span>Allergeni *</span><div class="filtri">'+ALLERGENI.map(function(a){return '<button class="chipf" data-mp-all="'+a+'" aria-pressed="'+(m.all.indexOf(a)>=0)+'">'+a+'</button>';}).join('')+'<button class="chipf" id="m-p-nessuno" aria-pressed="'+m.nessuno+'">Nessuno dei 14</button></div></div>'+
      '<div class="campo"><span>Contiene carne o pesce? *</span><div class="filtri"><button class="chipf" data-mp-carne="si" aria-pressed="'+(m.carne===true)+'">Sì</button><button class="chipf" data-mp-carne="no" aria-pressed="'+(m.carne===false)+'">No</button>'+
-       '</div></div>'+(m.carne===false?'<div class="campo"><span>Per i clienti</span><div class="filtri">'+[['','Niente'],['Vegetariano','Vegetariano'],['Vegano','Vegano']].map(function(d){var v=m.veg===true?'Vegetariano':(m.veg||'');return '<button class="chipf" data-mp-veg="'+d[0]+'" aria-pressed="'+(v===d[0])+'">'+d[1]+'</button>';}).join('')+'</div></div>':'')+
+       '</div></div>'+(m.carne===false?'<div class="campo"><span>Per i clienti</span><div class="filtri">'+[['','Niente'],['Vegetariano','Vegetariano'],['Vegano','Vegano']].map(function(d){var v=m.veg===true?'Vegetariano':(m.veg||''), no=d[0]==='Vegano'&&m.all.some(function(a){return /^(Latte|Uova)$/.test(a);});return '<button class="chipf" data-mp-veg="'+d[0]+'" aria-pressed="'+(v===d[0])+'"'+(no?' disabled title="Con latte o uova non è vegano"':'')+'>'+d[1]+'</button>';}).join('')+'</div>'+(m.all.some(function(a){return /^(Latte|Uova)$/.test(a);})?'<small class="auto-nota">Con latte o uova non può essere vegano.</small>':'')+'</div>':'')+
      (m.carne?'<label class="campo"><span>Provenienza * (che carne o pesce, e da dove)</span><input class="inp" id="m-p-prov" value="'+esc(m.prov)+'" placeholder="'+(m.all.some(function(a){return /^(Pesce|Crostacei|Molluschi)$/.test(a);})?'Es. Trota: Svizzera':'Es. Manzo: Svizzera')+'"></label><small class="auto-nota" id="m-p-prov-err" role="status"></small>':'')+
      '<div class="piede"><button class="link" id="m-p-annulla">Annulla</button><button class="btn pieno" id="m-p-salva"'+(String(p.nome).trim()&&p.portata?'':' disabled')+'>'+(esistente?'Salva':'Aggiungi')+'</button></div></div>';
     var leggi=function(){p.nome=$('#m-p-nome',velo).value;p.descr=$('#m-p-descr',velo).value;p.prezzo=leggiPrezzo($('#m-p-prezzo',velo).value);var pv=$('#m-p-prov',velo);if(pv)p.man.prov=pv.value;var np=$('#m-p-nuova',velo);if(np&&np.value.trim()){p.portata=normPortata(np.value);nuovaPortata=false;}}; /* la portata nuova entra fra quelle del locale solo al salvataggio */
@@ -2192,6 +2223,7 @@ function piattoAMano(k,serv,esistente,poi){
     if($('#m-p-piu',velo)) $('#m-p-piu',velo).onclick=function(){nuovaPortata=true;rifai('#m-p-nuova');};
     var np=$('#m-p-nuova',velo); if(np){ np.onkeydown=function(e){if(e.key==='Enter'){rifai('[data-mp-portata]');}}; np.oninput=function(){$('#m-p-salva',velo).disabled=!(String(p.nome).trim()&&(p.portata||np.value.trim()));}; }
     $$('[data-mp-all]',velo).forEach(function(b){b.onclick=function(){var a=b.dataset.mpAll,j=m.all.indexOf(a);if(j>=0)m.all.splice(j,1);else m.all.push(a);m.nessuno=false;
+      if(j<0&&m.veg==='Vegano'&&/^(Latte|Uova)$/.test(a)){ m.veg='Vegetariano'; toast('Con '+a.toLowerCase()+' non è vegano: ora dice «Vegetariano».'); }
       /* pesce, crostacei e molluschi: la provenienza è obbligatoria e il piatto non è vegetariano */
       if(j<0&&/^(Pesce|Crostacei|Molluschi)$/.test(a)){ m.carne=true; m.veg=false; }
       rifai('[data-mp-all="'+a+'"]');};});
@@ -2221,7 +2253,7 @@ function pubblica(k,serv){
   var eraOnline=m.stato==='online';
   function fai(){ fissaIndirizzo(); m.stato='online'; m.aggiornato=false; m.agg=Date.now(); S.locale.primoPubblica=false; m.piatti.forEach(function(p){p.allPubblicati=infoPiatto(p).all.slice();}); ridisegnaOggi();
     if(eraOnline){ toast('Aggiornato online.'); return; }
-    toast(giorniFa(k)===0?nomeServ(serv)+' online: i clienti lo vedono dal QR.':nomeServ(serv)+' di '+quandoTesto(k)+': va online da solo '+quandoOnline(k)+'.',function(){m.stato='bozza';ridisegnaOggi();}); }
+    toast(giorniFa(k)===0?nomeServ(serv)+' online: i clienti lo vedono dal QR.':nomeServ(serv)+' di '+quandoTesto(k)+' programmato: va online da solo '+quandoOnline(k)+'.',function(){m.stato='bozza';ridisegnaOggi();}); }
   var disegnaP=function(){ lista=problemi(k,serv);
     velo.innerHTML='<div class="foglio" role="dialog" aria-modal="true" aria-labelledby="tp"><h2 id="tp">'+(lista.length?(eraOnline?'Da sistemare':'Prima di metterlo online'):'Tutto pronto')+'</h2>'+
       (lista.length?'<p>Manca ancora qualcosa. Lo completi qui.</p>':'')+
@@ -2324,7 +2356,7 @@ function servizioCliente(k){ var att=serviziAttivi(), on=att.filter(function(s){
     var prima=on.filter(function(x){return att.indexOf(x)<i;});
     return ora<inizio(s)&&prima.length?{serv:prima[prima.length-1],finito:true}:{serv:s,presto:true}; }
   return {serv:on[on.length-1],finito:true}; }
-function prossimaApertura(k){ var d=dataDa(k); for(var i=1;i<=7;i++){ var x=new Date(d.getTime()+i*864e5); if(S.locale.chiuso.indexOf(x.getDay())<0) return chiaveGiorno(x); } return null; }
+function prossimaApertura(k){ var d=dataDa(k); for(var i=1;i<=60;i++){ var kk=chiaveGiorno(new Date(d.getTime()+i*864e5)); if(!chiuso(kk)) return kk; } return null; } /* stesse eccezioni del menu (RC-07); oltre 60 giorni nessuna data */
 
 function disegnaCliente(){
   S.cli=S.cli||{lingua:linguaIniziale(),senza:[],filtroAperto:false,ora:null,serv:null};
@@ -2334,7 +2366,7 @@ function disegnaCliente(){
   var on=prova?[prova.serv]:serviziAttivi().filter(function(s){return statoMenu(k,s)==='online';});
   var barra='<div class="cli-barra" role="region" aria-label="Prototipo">'+
     '<button class="link" id="cli-torna">'+(anteprima?'← Torna al Menu':'← Torna all’entrata')+'</button>'+
-    '<span class="cli-barra-testo">'+(prova?'Anteprima: '+nomeServ(prova.serv).toLowerCase()+' di '+quandoTesto(prova.k)+', non ancora online':anteprima?'Anteprima: così lo vede il cliente dal QR':'Prototipo: la pagina del QR')+'</span>'+
+    '<span class="cli-barra-testo">'+(prova?'Anteprima: '+nomeServ(prova.serv).toLowerCase()+' di '+quandoTesto(prova.k)+(statoMenu(prova.k,prova.serv)==='pronto'?', programmato: online da solo '+quandoOnline(prova.k):', non ancora online'):anteprima?'Anteprima: così lo vede il cliente dal QR':'Prototipo: la pagina del QR')+'</span>'+
     (prova?'':'<label class="cli-ora"><span>Ora</span><select id="cli-ora"><option value="">adesso</option>'+[['11.45',705],['13.30',810],['15.00',900],['19.30',1170],['22.30',1350]].map(function(o){return '<option value="'+o[1]+'"'+(c.ora===o[1]?' selected':'')+'>'+o[0]+'</option>';}).join('')+'</select></label>')+'</div>';
   var testa='<header class="cli-testa">'+(S.locale.logo?'<img class="cli-logo" src="'+S.locale.logo+'" alt="">':'')+'<div><h1>'+esc(S.locale.nome||'Il nostro locale')+'</h1>'+(S.locale.luogo?'<p>'+esc(S.locale.luogo)+'</p>':'')+'</div>'+
     '<div class="cli-lingue" role="group" aria-label="'+T.lingua+'">'+LINGUE.map(function(x){return '<button class="cli-lingua" data-lingua="'+x[0]+'" aria-pressed="'+(l===x[0])+'" title="'+x[2]+'" lang="'+x[0]+'">'+x[1]+'</button>';}).join('')+'</div></header>';
@@ -2466,7 +2498,7 @@ function adatta(el,f){
   return fine('pagine',{pagine:n});
 }
 function testoEsito(r,f){
-  return {intero:r.grande?'Sta tutto in una pagina, con il carattere più grande: si legge da lontano.':'Sta tutto in una pagina.',
+  return {intero:r.grande?'Sta tutto in una pagina, con il carattere più grande che ci sta.':'Sta tutto in una pagina.',
     'senza-descr':'Senza descrizioni, così sta in una pagina.',
     'piu-piccolo':r.conDescr?'Senza descrizioni e con il carattere più piccolo, così sta in una pagina.':'Con il carattere più piccolo, così sta in una pagina.',
     pagine:'Va su '+r.pagine+' pagine, con tutti i dati.',
@@ -2489,7 +2521,7 @@ function apriStampa(k,serv,ristampa){
       (nota?'<p class="avviso'+(S.locale.nome.trim()&&!mancano?' da-fare':'')+'">'+nota+'</p>':'')+
       '<div class="stampa-corpo"><div class="stampa-scelte">'+
       '<div class="gruppo"><h3>Formato</h3><div class="formati">'+FORMATI.map(function(x){return '<button class="formato" data-formato="'+x.id+'" aria-pressed="'+(x.id===stato.formato)+'"><b>'+x.nome+'</b><small>'+x.info+'</small></button>';}).join('')+'</div></div>'+
-      '<div class="gruppo"><h3>Stile</h3><div class="filtri">'+STILI.map(function(x){return '<button class="chipf" data-st-stile="'+x[0]+'" aria-pressed="'+(x[0]===stato.stile)+'">'+x[1]+'</button>';}).join('')+'</div><small class="auto-nota">Vale anche per il menu sul telefono dei clienti.</small></div>'+
+      (S.ruolo==='chef'?'':'<div class="gruppo"><h3>Stile</h3><div class="filtri">'+STILI.map(function(x){return '<button class="chipf" data-st-stile="'+x[0]+'" aria-pressed="'+(x[0]===stato.stile)+'">'+x[1]+'</button>';}).join('')+'</div><small class="auto-nota">'+(stato.stile!==S.locale.stile?(stato.formato==='immagine'?'Scaricando o condividendo':'Stampando')+', diventa lo stile del locale: anche sul telefono dei clienti. «Annulla» lo lascia com’era.':'Vale anche per il menu sul telefono dei clienti.')+'</small></div>')+
       (stato.formato==='immagine'?'<div class="gruppo"><h3>Forma</h3><div class="filtri">'+IMMAGINI.map(function(x){return '<button class="chipf" data-img="'+x.id+'" aria-pressed="'+(x.id===stato.img)+'">'+x.nome+'</button>';}).join('')+'</div></div>':'')+
       '</div><div class="anteprima-box" id="anteprima"></div></div>'+
       '<div class="piede"><p class="auto-nota esito-stampa" id="esito-stampa" role="status"></p><button class="btn quieto" id="st-chiudi">Annulla</button>'+(stato.formato==='immagine'?
@@ -2498,7 +2530,8 @@ function apriStampa(k,serv,ristampa){
     var vai=function(id){stato.formato=id;disegnaS();$('[data-formato="'+id+'"]',velo).focus();};
     $$('[data-formato]',velo).forEach(function(b){b.onclick=function(){vai(b.dataset.formato);};});
     $$('[data-img]',velo).forEach(function(b){b.onclick=function(){stato.img=b.dataset.img;disegnaS();$('[data-img="'+stato.img+'"]',velo).focus();};});
-    $$('[data-st-stile]',velo).forEach(function(b){b.onclick=function(){stato.stile=S.locale.stile=b.dataset.stStile;disegnaS();$('[data-st-stile="'+stato.stile+'"]',velo).focus();};});
+    $$('[data-st-stile]',velo).forEach(function(b){b.onclick=function(){stato.stile=b.dataset.stStile;disegnaS();$('[data-st-stile="'+stato.stile+'"]',velo).focus();};});
+    var fissaStile=function(){ if(S.ruolo!=='chef'&&stato.stile!==S.locale.stile){ S.locale.stile=stato.stile; return true; } return false; };
     $('#st-chiudi',velo).onclick=chiudi;
     if($('#st-completa',velo)) $('#st-completa',velo).onclick=function(){velo.remove();pubblica(k,serv);};
     if($('#st-nome',velo)) $('#st-nome',velo).onclick=function(){velo.remove();apriLocaleVeloce();};
@@ -2512,9 +2545,9 @@ function apriStampa(k,serv,ristampa){
       $$('[data-img-vai]',velo).forEach(function(b){b.onclick=function(){stato.img=b.dataset.imgVai;disegnaS();$('[data-img="'+stato.img+'"]',velo).focus();};});
       if(!S.locale.nome.trim()){ $('#st-scarica',velo).disabled=true; if($('#st-condividi',velo)) $('#st-condividi',velo).disabled=true; }
       if(!pf.piatti.length){ es.textContent='Niente da mostrare: nell’immagine non c’è nessun piatto.'; $('#st-scarica',velo).disabled=true; if($('#st-condividi',velo)) $('#st-condividi',velo).disabled=true; }
-      $('#st-scarica',velo).onclick=function(){ scaricaCanvas(cv,'menu-'+slugLocale()+'-'+k+'-'+serv+'.png'); toast('Immagine scaricata.'); };
-      if($('#st-condividi',velo)) $('#st-condividi',velo).onclick=function(){ cv.toBlob(function(b){ var file=new File([b],'menu-'+k+'.png',{type:'image/png'});
-        if(navigator.canShare&&navigator.canShare({files:[file]})) navigator.share({files:[file],title:S.locale.nome}).catch(function(){}); else { scaricaCanvas(cv,'menu-'+k+'.png'); toast('Questo browser non condivide i file: l’immagine è stata scaricata.'); } },'image/png'); };
+      $('#st-scarica',velo).onclick=function(){ if(scaricaCanvas(cv,'menu-'+slugLocale()+'-'+k+'-'+serv+'.png')){ var cambiato=fissaStile(); toast((cambiato?'Stile del locale: '+nomeStile(stato.stile)+'. ':'')+'Download avviato.'); } };
+      if($('#st-condividi',velo)) $('#st-condividi',velo).onclick=function(){ fissaStile(); cv.toBlob(function(b){ var file=new File([b],'menu-'+k+'.png',{type:'image/png'});
+        if(navigator.canShare&&navigator.canShare({files:[file]})) navigator.share({files:[file],title:S.locale.nome}).catch(function(){}); else { if(scaricaCanvas(cv,'menu-'+k+'.png')) toast('Questo browser non condivide i file: download avviato.'); } },'image/png'); };
     } else {
       var w=f.faccia?f.faccia[0]:f.pagina[0], hh=f.faccia?f.faccia[1]:f.pagina[1], cs=getComputedStyle(ant);
       var largo=ant.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight), alto=parseFloat(cs.maxHeight)-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom);
@@ -2525,7 +2558,7 @@ function apriStampa(k,serv,ristampa){
         (r.esito==='cavaliere'?' <button class="link" data-formato-vai="a4">Stampa anche l’A4 per il personale</button>':r.esito==='troppo'?' <button class="link" data-formato-vai="a5">Passa ad A5</button>':'');
       if($('[data-formato-vai]',velo)) $('[data-formato-vai]',velo).onclick=function(){vai(this.dataset.formatoVai);};
       var bt=$('#st-stampa',velo); bt.disabled=r.esito==='troppo'||!pf.piatti.length||!S.locale.nome.trim();
-      bt.onclick=function(){ stampaMenu(k,serv,f,stato.stile,r); velo.remove(); toast('Si apre la stampa del browser. Se poi cambi il menu, qui compare «Ristampa».'); };
+      bt.onclick=function(){ var cambiato=fissaStile(); stampaMenu(k,serv,f,stato.stile,r); velo.remove(); toast((cambiato?'Stile del locale: '+nomeStile(stato.stile)+'. ':'')+'Si apre la stampa del browser. Se poi cambi il menu, qui compare «Ristampa».'); };
     }
   };
   var chiudi=function(){velo.remove();ridisegnaOggi();};
@@ -2543,7 +2576,8 @@ function stampaMenu(k,serv,f,stile,r){ fissaIndirizzo();
   var m=menuDi(k,serv); m.stampato={firma:firmaMenu(k,serv),quando:Date.now(),id:f.id,stile:stile}; m.stampati=m.stampati||{}; m.stampati[f.id]=m.stampato.firma;
   ridisegnaOggi(); setTimeout(function(){window.print();},50);
 }
-function scaricaCanvas(cv,nome){ try{ var a=document.createElement('a'); a.download=nome; a.href=cv.toDataURL('image/png'); document.body.appendChild(a); a.click(); a.remove(); }catch(e){ toast('Il browser non ha permesso di scaricare.'); } }
+/* RC-17: dice se il download è partito; il successo lo annuncia solo chi chiama */
+function scaricaCanvas(cv,nome){ try{ var a=document.createElement('a'); a.download=nome; a.href=cv.toDataURL('image/png'); document.body.appendChild(a); a.click(); a.remove(); return true; }catch(e){ toast('Il browser non ha permesso di scaricare.'); return false; } }
 
 /* immagine disegnata sul canvas: stessi colori dello stile scelto */
 function coloriStile(st){ var g=getComputedStyle(document.documentElement), v=function(n){return g.getPropertyValue(n).trim();};
@@ -2736,7 +2770,7 @@ function disegnaLocale(){
   su('l-logo-togli',function(e){e.onclick=function(){ var vecchio=L.logo; delete L.logo; disegnaLocale(); toast('Logo tolto.',function(){L.logo=vecchio;disegnaLocale();}); };});
   var legaQr=function(){
   su('l-tavoli',function(e){e.onclick=apriQrTavoli;});
-  su('l-qr-scarica',function(e){e.onclick=function(){ fissaIndirizzo(); scaricaCanvas(qrCanvas(urlLocale(),1200),'qr-menu-'+slugLocale()+'.png'); toast('QR scaricato.'); };});
+  su('l-qr-scarica',function(e){e.onclick=function(){ fissaIndirizzo(); if(scaricaCanvas(qrCanvas(urlLocale(),1200),'qr-menu-'+slugLocale()+'.png')) toast('Download del QR avviato.'); };});
   }; legaQr();
   su('l-portata-ok',function(e){e.onclick=function(){ var i=$('#l-portata'), t=i.value.trim(); if(!t) { i.focus(); return; }
     t=t.charAt(0).toUpperCase()+t.slice(1); if(PORTATE.concat(S.portateExtra).some(function(x){return chiave(x)===chiave(t);})){ toast('«'+t+'» c’è già.'); return; }
@@ -2809,11 +2843,11 @@ function disegnaModifica(pg,r){
   var basi=S.ricette.filter(function(x){return x.portata==='Basi'&&x.id!==r.id&&!usa(x,r.id);});
   NOMI_SUGG=Object.keys(S.diz).map(function(k){return k.charAt(0).toUpperCase()+k.slice(1);}).concat(basi.map(function(b){return b.nome;}));
   pg.innerHTML=
-   '<div class="azioni testa-modifica"><span class="salvato" id="salvato">Salvato</span><button class="btn pieno" id="fine">Fatto</button></div>'+
+   '<div class="azioni testa-modifica"><span class="salvato" id="salvato">'+(String(r.nome||'').trim()||r.ingr.some(function(i){return String(i.nome||'').trim();})?'Salvato':'')+'</span><button class="btn pieno" id="fine">Fatto</button></div>'+
    '<label class="campo"><span>Titolo *</span><input id="m-nome" value="'+esc(r.nome)+'" placeholder="Es. Risotto ai porcini"></label>'+
    '<label class="campo"><span>Una frase sulla ricetta</span><input id="m-frase" value="'+esc(r.frase)+'" placeholder="Es. Il risotto della casa"></label>'+
    '<div class="griglia-campi">'+
-    '<label class="campo"><span>Portata *</span><select id="m-portata">'+(r.portata?'':'<option value="" selected>Scegli…</option>')+PORTATE.map(function(p){return '<option'+(p===r.portata?' selected':'')+'>'+p+'</option>';}).join('')+'</select></label>'+
+    '<label class="campo"><span>Portata *</span><select id="m-portata">'+(r.portata?'':'<option value="" selected>Scegli…</option>')+PORTATE.concat(S.portateExtra).map(function(p){return '<option'+(p===r.portata?' selected':'')+'>'+esc(p)+'</option>';}).join('')+'</select></label>'+
     '<label class="campo"><span>Stagione</span><select id="m-stagione">'+STAGIONI.map(function(p){return '<option'+(p===r.stagione?' selected':'')+'>'+p+'</option>';}).join('')+'</select></label>'+
     '<label class="campo"><span>'+(resaDi(r)==='litri'?'Resa in litri':nomePorz(r))+'</span><input id="m-porz" class="inp" inputmode="decimal" value="'+String(r.porzioni).replace('.',',')+'"></label>'+
     '<label class="campo"><span>Tempo</span><input id="m-tempo" value="'+esc(r.tempo)+'" placeholder="Es. 35 min"></label>'+
@@ -2982,7 +3016,7 @@ function disegnaIncolla(pg){
    '<p class="frase">Incolla il testo da Word, WhatsApp o da un’email. Separiamo noi titolo, ingredienti e passaggi. Tu controlli e correggi.</p>'+
    '<div class="incolla"><label class="campo"><span>Il tuo testo</span><textarea id="testo-incolla" style="min-height:var(--testo-area-grande)" placeholder="Incolla qui la ricetta"></textarea></label>'+
    '<div class="riquadro" id="anteprima-incolla"></div></div>'+
-   '<div class="campo"><span>Che portata è? *</span><div class="filtri">'+PORTATE.map(function(x){return '<button class="chipf" data-pi="'+x+'" aria-pressed="false">'+sing(x)+'</button>';}).join('')+'</div></div>'+
+   '<div class="campo"><span>Che portata è? *</span><div class="filtri">'+PORTATE.concat(S.portateExtra).map(function(x){return '<button class="chipf" data-pi="'+x+'" aria-pressed="false">'+sing(x)+'</button>';}).join('')+'</div></div>'+
    '<div class="azioni"><button class="btn pieno" id="crea-incolla" disabled>Crea la ricetta</button><span class="auto-nota" id="manca-incolla" aria-live="polite"></span><button class="link" id="esempio-incolla">Prova con un esempio</button></div>';
   var ta=$('#testo-incolla'), ant=$('#anteprima-incolla'), portata='', titolo=null, porzScritte=null;
   var mostra=function(){var o=leggiTesto(ta.value); if(titolo!=null) o.nome=titolo;
@@ -3041,7 +3075,8 @@ function mmss(s){s=Math.max(0,s);var h=Math.floor(s/3600),m=Math.floor(s%3600/60
    - lettura ad alta voce del passaggio;
    - più timer insieme, sempre in vista. */
 function apriCucina(r){
-  chiudiToast(); S.spunteCucina[r.id]=S.spunteCucina[r.id]||{};
+  chiudiToast();
+  if(!r.passi.some(function(x){return String(x).trim();})){ toast('Per la modalità cucina serve almeno un passaggio.',eChef()?function(){S.sel=r.id;S.modo='modifica';disegnaRicettario();var t=$$('#m-passi textarea')[0];if(t)t.focus();}:null,'Scrivi i passaggi'); return; } /* RC-12 */ S.spunteCucina[r.id]=S.spunteCucina[r.id]||{};
   S.cucina={id:r.id,passo:0,spunte:S.spunteCucina[r.id],timers:[],ascolta:false,leggi:false,aiuto:!S.cucinaVista};
   S.cucinaVista=true;
   var el=document.createElement('div'); el.className='cucina'; el.id='modo-cucina'; el.setAttribute('role','dialog'); el.setAttribute('aria-modal','true'); el.setAttribute('aria-label','Modalità cucina');
@@ -3049,7 +3084,7 @@ function apriCucina(r){
   tieniAcceso(); disegnaCucina();
 }
 function tieniAcceso(){ try{ if(navigator.wakeLock&&S.cucina) navigator.wakeLock.request('screen').then(function(l){if(S.cucina)S.cucina.lock=l;}).catch(function(){}); }catch(e){} }
-document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible'&&S.cucina) tieniAcceso(); });
+document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible'&&S.cucina){ tieniAcceso(); if(S.cucina.timers.length) battito(); } });
 function esciCucina(finito){ var c=S.cucina; if(!c) return;
   var dopo=function(){ if(finito) S.spunteCucina[c.id]={}; chiudiCucina(); if(finito) toast('Ricetta finita. Buon servizio!'); };
   if(c.timers.length){ toast(c.timers.length===1?'Il timer è ancora acceso.':'Ci sono '+c.timers.length+' timer accesi.',dopo,'Chiudi lo stesso'); return; }
@@ -3063,10 +3098,10 @@ function leggiPasso(){ try{ if(!window.speechSynthesis) {toast('Questo browser n
   var u=new SpeechSynthesisUtterance('Passaggio '+(S.cucina.passo+1)+'. '+passiCucina()[S.cucina.passo]); u.lang='it-IT'; speechSynthesis.speak(u);}catch(e){} }
 function avviaTimer(k){var c=S.cucina; if(!c) return; var sec=tempoTimer(passiCucina()[k]||''); if(!sec) return;
   if(c.timers.some(function(t){return t.passo===k;})) return;
-  c.timers.push({passo:k,resta:sec,totale:sec}); if(!timerI) timerI=setInterval(battito,1000); disegnaCucina();}
+  c.timers.push({passo:k,resta:sec,totale:sec,fine:Date.now()+sec*1000}); if(!timerI) timerI=setInterval(battito,1000); disegnaCucina();}
 function fermaTimer(k){var c=S.cucina; if(!c) return; c.timers=c.timers.filter(function(t){return t.passo!==k;}); if(!c.timers.length){clearInterval(timerI);timerI=null;} disegnaCucina();}
 function battito(){var c=S.cucina; if(!c){clearInterval(timerI);timerI=null;return;}
-  var finiti=[]; c.timers.forEach(function(t){t.resta--; var o=document.querySelector('[data-t-out="'+t.passo+'"]'); $$('[data-t-out="'+t.passo+'"]').forEach(function(o){o.textContent=mmss(t.resta);}); if(t.resta<=0) finiti.push(t);});
+  var finiti=[]; c.timers.forEach(function(t){t.resta=Math.max(0,Math.round((t.fine-Date.now())/1000)); /* RC-13: dall'orologio */ var o=document.querySelector('[data-t-out="'+t.passo+'"]'); $$('[data-t-out="'+t.passo+'"]').forEach(function(o){o.textContent=mmss(t.resta);}); if(t.resta<=0) finiti.push(t);});
   if(finiti.length){ c.timers=c.timers.filter(function(t){return t.resta>0;}); if(!c.timers.length){clearInterval(timerI);timerI=null;}
     suona(); var el=$('#modo-cucina'); if(el){el.classList.remove('lampo'); void el.offsetWidth; el.classList.add('lampo');}
     toast('Tempo scaduto: passaggio '+finiti.map(function(t){return t.passo+1;}).join(' e ')+'.');
@@ -3082,9 +3117,11 @@ function avviaAscolto(){ var c=S.cucina; var SR=window.SpeechRecognition||window
   fermaAscolto(); var a=new SR(); a.lang='it-IT'; a.continuous=true; a.interimResults=false; ascolto=a;
   a.onresult=function(e){ if(window.speechSynthesis&&speechSynthesis.speaking) return; var t=e.results[e.results.length-1][0].transcript.toLowerCase(); comandoVoce(t); };
   a.onerror=function(e){ if(e.error==='no-speech'||e.error==='aborted') return; c.ascolta=false; fermaAscolto();
-    toast(e.error==='not-allowed'||e.error==='service-not-allowed'?'Il microfono non è permesso. La voce funzionerà con il prototipo online.':'La voce qui non funziona: serve il prototipo online. Usa il tocco grande o un pedale.'); disegnaCucina(); };
+    toast(e.error==='not-allowed'?(location.protocol==='file:'?'Aperto dal computer il browser non dà il microfono: su remychef.ch sì. Intanto usa il tocco grande.':'Il microfono è spento per questo sito: permettilo nelle impostazioni del browser, oppure usa il tocco grande.'):
+      e.error==='audio-capture'?'Nessun microfono trovato. Usa il tocco grande o un pedale.':
+      e.error==='network'||e.error==='service-not-allowed'?'Il riconoscimento della voce non risponde. Usa il tocco grande o un pedale.':'La voce non funziona ('+e.error+'). Usa il tocco grande o un pedale.'); disegnaCucina(); };
   a.onend=function(){ if(S.cucina&&S.cucina.ascolta&&ascolto===a){ try{a.start();}catch(e){} } };
-  try{ a.start(); }catch(e){ c.ascolta=false; toast('La voce qui non funziona: serve il prototipo online.'); disegnaCucina(); } }
+  try{ a.start(); }catch(e){ c.ascolta=false; toast('La voce non è partita. Usa il tocco grande o un pedale.'); disegnaCucina(); } }
 function comandoVoce(t){ var c=S.cucina; if(!c) return; var segno=$('#sentito'); if(segno) segno.textContent='«'+t.trim()+'»';
   if(/\bavanti\b/.test(t)) vaiPasso(1);
   else if(/\bindietro\b/.test(t)) vaiPasso(-1);
@@ -3103,7 +3140,7 @@ function disegnaCucina(){
     '<button class="btn quieto icona-testo" id="c-leggi" aria-label="Leggi ad alta voce" aria-pressed="'+c.leggi+'">'+ICONE.voce+'<span>Leggi</span></button>'+
     '<button class="btn quieto" id="esci-cucina">Chiudi</button></div>'+
    '<div class="corpo"><div class="scheda"><h3>Ingredienti per '+perPorz(r,p)+'</h3><ul class="spunta">'+
-     r.ingr.filter(function(i){return String(i.nome||'').trim();}).map(function(i,k){return '<li><label><input type="checkbox" data-sp="'+k+'"'+(c.spunte[k]?' checked':'')+'><span>'+esc(i.nome)+'</span><b class="q">'+qta(i,r,p)+'</b></label></li>';}).join('')+'</ul></div>'+
+     r.ingr.filter(function(i){return String(i.nome||'').trim();}).map(function(i,k,tutti){ var kk=chiave(i.nome), n=tutti.slice(0,k).filter(function(x){return chiave(x.nome)===kk;}).length; kk=n?kk+'|'+(n+1):kk; return '<li><label><input type="checkbox" data-sp="'+esc(kk)+'"'+(c.spunte[kk]?' checked':'')+'><span>'+esc(i.nome)+'</span><b class="q">'+qta(i,r,p)+'</b></label></li>';}).join('')+'</ul></div>'+
    '<div class="passo"><div class="num">Passaggio '+(c.passo+1)+' di '+n+'</div><div class="punti">'+passi.map(function(_,k){return '<i class="'+(k===c.passo?'on':'')+'"></i>';}).join('')+'</div>'+
      '<button class="testo-passo" id="c-tocca" aria-label="'+(c.passo===n-1?'Ultimo passaggio':'Passaggio dopo')+'">'+esc(testo)+'</button>'+
      (sec?'<div class="timer">'+(mio?'<output class="grande" data-t-out="'+c.passo+'">'+mmss(mio.resta)+'</output><button class="btn quieto" id="t-stop">Ferma</button>':'<button class="btn" id="t-via">'+ICONE.timer+'<span>Timer '+mmss(sec)+'</span></button>')+'</div>':'')+
@@ -3135,7 +3172,7 @@ document.addEventListener('keydown',function(e){ if(!S.cucina) return;
 /* ---------- stampa: scheda e libro ---------- */
 function paginaRicettaStampa(r,p,numero){var a=analisi(r); p=p||r.porzioni;
   return '<section class="pg st-ric"><div class="occ">'+(numero?'Ricetta '+numero+' · ':'')+sing(r.portata)+' · '+r.stagione+'</div><h2>'+esc(r.nome)+'</h2>'+(r.frase?'<p class="fr">'+esc(r.frase)+'</p>':'')+
-   '<div class="meta"><div><small>'+nomePorz(r)+'</small><b>'+p+'</b></div>'+(r.tempo?'<div><small>Tempo</small><b>'+esc(r.tempo)+'</b></div>':'')+'</div>'+
+   '<div class="meta"><div><small>'+nomePorz(r)+'</small><b>'+String(p).replace('.',',')+'</b></div>'+(r.tempo?'<div><small>Tempo</small><b>'+esc(r.tempo)+'</b></div>':'')+'</div>'+
    '<div class="colonne"><div><h3>Ingredienti</h3><ul class="ingr">'+ingrHTML(r,p)+'</ul></div><div><h3>Preparazione</h3><ol class="passi">'+r.passi.filter(function(s){return s.trim();}).map(function(s){return '<li>'+esc(s)+'</li>';}).join('')+'</ol></div></div>'+
    (a.mancano.length?'<div class="all"><b>Ricetta da completare:</b> '+a.mancano.map(esc).join(', ')+'</div>':'')+
    '<div class="all"><b>Allergeni:</b> '+(a.all.length?a.all.join(', '):a.mancano.length?'da calcolare':'nessuno dei 14')+(a.prov.length?' · <b>Provenienza:</b> '+a.prov.map(esc).join(', '):'')+'</div></section>';}
@@ -3220,33 +3257,36 @@ function tipoCosto(i){ var u=i.u, c=S.costi[piega(i.nome)]||{};
 /* un cucchiaio = 15 g o 15 ml, un cucchiaino = 5 (approssimazione dichiarata) */
 function quantitaCosto(i){ var q=+i.q; if(!(q>0)) return 0; return i.u==='g'?q/1000:i.u==='dl'?q/10:i.u==='cucchiai'?q*0.015:i.u==='cucchiaini'?q*0.005:q; }
 function litriBase(i){ return i.u==='l'?+i.q:i.u==='dl'?i.q/10:null; }
-function costoRicetta(r,visti){ visti=visti||{}; var out={tot:0,porz:0,mancano:[],nonContati:[],basiUnita:[],contati:0,ingredienti:0};
+function costoRicetta(r,visti){ visti=visti||{}; var out={tot:0,porz:0,mancano:[],nonContati:[],basiUnita:[],senzaQ:[],contati:0,ingredienti:0};
   if(!r||visti[r.id]) return out; visti[r.id]=1;
   var manca=function(x){ if(!out.mancano.some(function(y){return y.k===x.k&&y.tipo===x.tipo;})) out.mancano.push(x); };
   r.ingr.forEach(function(i){ var n=String(i.nome||'').trim(); if(!n||eAcqua(n)) return; out.ingredienti++;
     if(i.base){ var b=ric(i.base); if(!b) return; var litri=litriBase(i);
       if(litri==null||!(b.porzioni>0)){ out.basiUnita.push(n); return; }
-      var cb=costoRicetta(b,Object.assign({},visti)); out.tot+=cb.tot*litri/b.porzioni; out.contati+=cb.contati; cb.mancano.forEach(manca); cb.basiUnita.forEach(function(x){out.basiUnita.push(x);}); return; }
-    var t=tipoCosto(i); if(!t||!(+i.q>0)){ out.nonContati.push(n); return; }
+      if(!(litri>0)){ out.senzaQ.push(n); return; }
+      var cb=costoRicetta(b,Object.assign({},visti)); out.tot+=cb.tot*litri/b.porzioni; out.contati+=cb.contati; cb.mancano.forEach(manca); cb.basiUnita.forEach(function(x){out.basiUnita.push(x);}); cb.senzaQ.forEach(function(x){out.senzaQ.push(x);}); return; }
+    var t=tipoCosto(i); if(!t){ out.nonContati.push(n); return; }
+    /* si paga a kg, litro o pezzo ma la quantità non c'è: il costo è parziale (RC-01) */
+    if(!(+i.q>0)){ out.senzaQ.push(n); return; }
     var k=piega(n), p=(S.costi[k]||{})[t];
     if(p==null){ manca({k:k,nome:n,tipo:t}); return; }
     out.tot+=quantitaCosto(i)*p; out.contati++; });
   out.porz=r.porzioni>0?out.tot/r.porzioni:0; return out; }
 /* il costo è completo: tutti i prezzi ci sono e le basi sono scritte in litri */
-function costoCompleto(c){ return !c.mancano.length&&!c.basiUnita.length&&c.contati>0; }
+function costoCompleto(c){ return !c.mancano.length&&!c.basiUnita.length&&!c.senzaQ.length&&c.contati>0; }
 /* prezzo sul menu, IVA compresa, che tiene il costo merce al 30%; arrotondato in su al mezzo franco */
 function prezzoConsigliato(costoPorz){ return Math.ceil(costoPorz/MERCE_OBIETTIVO*(1+IVA_RISTORAZIONE)*2)/2; }
 function quotaMerce(costoPorz,prezzo){ return prezzo>0?costoPorz/(prezzo/(1+IVA_RISTORAZIONE)):null; }
 function frc(v){ return 'fr. '+v.toFixed(2); }
 function perUnita(r){ var x=resaDi(r); return x==='litri'?' al litro':x==='pezzi'?' al pezzo':' a porzione'; }
 function costoHTML(r){ var c=costoRicetta(r), nm=c.mancano.length, piatto=!resaDi(r);
-  var testo=!c.ingredienti?'Nessun ingrediente ancora':!(r.porzioni>0)?'Scrivi le porzioni':(!c.contati&&nm)?'Mancano i prezzi d’acquisto':frc(c.porz)+perUnita(r)+(nm?', senza '+nm+(nm===1?' ingrediente':' ingredienti'):'');
+  var testo=!c.ingredienti?'Nessun ingrediente ancora':!(r.porzioni>0)?'Scrivi le porzioni':(!c.contati&&nm)?'Mancano i prezzi d’acquisto':(c.senzaQ.length?'Costo parziale: '+frc(c.porz)+perUnita(r)+', manca la quantità di '+unici(c.senzaQ).map(function(x){return x.toLowerCase();}).join(', '):frc(c.porz)+perUnita(r)+(nm?', senza '+nm+(nm===1?' ingrediente':' ingredienti'):''));
   var h='<div class="riquadro costo"><div class="riga"><b>Costo merce</b><span>'+testo+'</span>'+(c.ingredienti?'<button class="link" id="prezzi-acq">'+(nm?'Aggiungi i prezzi':'Prezzi d’acquisto')+'</button>':'')+'</div>';
   if(c.basiUnita.length) h+='<div class="riga"><span class="attenzione">'+esc(unici(c.basiUnita).join(', '))+(c.basiUnita.length===1?': è una base scritta':': sono basi scritte')+' in grammi o cucchiai. Per il costo scrivi la quantità in l o dl.</span></div>';
   if(piatto&&c.ingredienti&&r.porzioni>0){
-    if(!costoCompleto(c)) h+='<div class="riga"><b>Prezzo minimo</b><span>quando ci sono tutti i prezzi</span></div>';
+    if(!costoCompleto(c)) h+='<div class="riga"><b>Prezzo proposto</b><span>'+(c.senzaQ.length?'quando ci sono tutte le quantità':'quando ci sono tutti i prezzi')+'</span></div>';
     else { var pc=prezzoConsigliato(c.porz), pm=S.prezzi[r.id], q=pm!=null?quotaMerce(c.porz,pm):null;
-      h+='<div class="riga"><b>Prezzo minimo</b><span>'+prezzoTesto(pc)+'</span><small>per stare al 30% di costo merce, IVA 8,1% compresa</small></div>';
+      h+='<div class="riga"><b>Prezzo proposto</b><span>'+prezzoTesto(pc)+'</span><small>calcolato solo sul costo merce: 30% del prezzo senza IVA (8,1%). Gli altri costi del locale non ci sono.</small></div>';
       if(q!=null) h+='<div class="riga"><b>Nel menu</b><span>'+prezzoTesto(pm)+'</span><small>costo merce '+Math.round(q*100)+'% del prezzo senza IVA</small>'+(q>MERCE_ALTA?'<span class="attenzione">alto</span>':'')+'</div>'; } }
   if(c.nonContati.length) h+='<small>Non contati, quantità piccole: '+esc(unici(c.nonContati.map(function(x){return x.toLowerCase();})).join(', '))+'.</small>';
   return h+'</div>'; }
@@ -3267,7 +3307,7 @@ function apriPrezzi(r,dopo){
     '<div class="prezzi-lista">'+l.map(function(x,j){ var v=(S.costi[x.k]||{})[x.tipo];
       return '<label class="riga-prezzo"><span class="nome"><b>'+esc(x.nome)+'</b><small class="attenzione" data-manca="'+j+'"'+(v==null?'':' hidden')+'>manca il prezzo</small>'+(x.da?'<small>nella base «'+esc(x.da)+'»</small>':'')+'</span><span class="prezzo"><span>fr.</span><input class="inp" inputmode="decimal" data-costo="'+j+'" value="'+(v!=null?v.toFixed(2):'')+'" placeholder="0.00" aria-label="'+esc(x.nome)+': franchi '+UNITA_COSTO[x.tipo]+'"></span><span class="unita">'+UNITA_COSTO[x.tipo]+'</span></label>'; }).join('')+'</div>'+
     '<div class="piede"><p class="costo-ora" id="costo-ora" aria-live="polite"></p><button class="btn pieno" id="prezzi-ok">Fatto</button></div></div>';
-  var ora=function(){ var c=costoRicetta(r), nm=c.mancano.length; $('#costo-ora',velo).textContent='Costo merce: '+frc(c.porz)+perUnita(r)+(nm?', senza '+nm+(nm===1?' ingrediente':' ingredienti'):''); };
+  var ora=function(){ var c=costoRicetta(r), nm=c.mancano.length; $('#costo-ora',velo).textContent=(c.senzaQ.length?'Costo parziale: ':'Costo merce: ')+frc(c.porz)+perUnita(r)+(nm?', senza '+nm+(nm===1?' ingrediente':' ingredienti'):'')+(c.senzaQ.length?', manca la quantità di '+unici(c.senzaQ).map(function(x){return x.toLowerCase();}).join(', '):''); };
   $$('[data-costo]',velo).forEach(function(e){
     e.onchange=function(){ var j=+e.dataset.costo, x=l[j], v=leggiPrezzo(e.value), prima=(S.costi[x.k]||{})[x.tipo];
       if((v==null&&e.value.trim())||v<0){ toast('Prezzo non capito: scrivi per esempio 4.50.'); e.value=prima!=null?prima.toFixed(2):''; return; }
@@ -3304,10 +3344,13 @@ function qSpesa(u,q){
   if(u==='g') return q>=1000? fmt(Math.ceil(q/100)/10)+' kg' : (q<50?Math.max(10,Math.ceil(q/10)*10):Math.ceil(q/50)*50)+' g';
   if(u==='ml') return q>=1000? fmt(Math.ceil(q/100)/10)+' l' : fmt(Math.max(0.5,Math.ceil(q/50)/2))+' dl';
   var n=Math.max(1,Math.ceil(q-1e-9)); return n+' '+(n===1?(SG[u]||u):(PL[u]||u)); }
-/* costo stimato di una voce: sulla quantità che serve (come nelle ricette) */
-function costoVoce(v){ var c=S.costi[v.k]; if(!c) return null;
-  if(v.u==='g'&&c.kg!=null) return v.q/1000*c.kg; if(v.u==='g'&&c.l!=null&&unitaTipica(v.nome)==='dl') return v.q/1000*c.l;
-  if(v.u==='ml'&&c.l!=null) return v.q/1000*c.l; if(v.u==='pz'&&c.pz!=null) return v.q*c.pz; return null; }
+/* la quantità da comprare, arrotondata come la lista la scrive */
+function qCompra(u,q){ if(u==='g') return q>=1000?Math.ceil(q/100)*100:(q<50?Math.max(10,Math.ceil(q/10)*10):Math.ceil(q/50)*50);
+  if(u==='ml') return q>=1000?Math.ceil(q/100)*100:Math.max(50,Math.ceil(q/50)*50); return Math.max(1,Math.ceil(q-1e-9)); }
+/* costo stimato di una voce: sulla quantità scritta nella lista, quella che si compra (RC-09) */
+function costoVoce(v){ var c=S.costi[v.k]; if(!c) return null; var q=qCompra(v.u,v.q);
+  if(v.u==='g'&&c.kg!=null) return q/1000*c.kg; if(v.u==='g'&&c.l!=null&&unitaTipica(v.nome)==='dl') return q/1000*c.l;
+  if(v.u==='ml'&&c.l!=null) return q/1000*c.l; if(v.u==='pz'&&c.pz!=null) return q*c.pz; return null; }
 function vociOrdinate(sp,g){ return Object.keys(sp.voci).map(function(k){return sp.voci[k];}).filter(function(x){return x.gruppo===g;}).sort(function(a,b){return a.nome.localeCompare(b.nome,'it');}); }
 function giornoCorto(d){ var dd=dataDa(d.k); return GIORNI_SETT[dd.getDay()].slice(0,3)+' '+dd.getDate()+(d.nome==='Oggi'?' · oggi':d.nome==='Domani'?' · domani':''); }
 function apriSpesa(){
@@ -3340,14 +3383,19 @@ function apriSpesa(){
     var aMano=ps.filter(function(x){return !x.r;}).map(function(x){return x.nome;});
     if(!conPiatti.length) h='<p>Nella settimana non c’è ancora nessun piatto: prima prepara il menu.</p>';
     else if(!ps.length) h='<p>Scegli almeno un giorno.</p>';
-    else if(vuota) h='<p>'+(conRic.length?'Tutte le porzioni sono a 0.':'I piatti di questi giorni sono scritti a mano, senza ricetta: non so cosa comprare.')+'</p>';
+    else if(vuota) h='<p>'+(!conRic.length?'I piatti di questi giorni sono scritti a mano, senza ricetta: non so cosa comprare.':
+        conRic.every(function(x){return !(x.porz>0);})?'Tutte le porzioni sono a 0.':
+        Object.keys(sp.basi).length&&Object.keys(sp.basi).every(function(id){return pronte[id];})?'Niente da comprare: le basi sono già pronte.':
+        Object.keys(sp.dispensa).length?'Niente da comprare: solo cose da controllare in dispensa.':'Niente da comprare per queste porzioni.')+'</p>'; /* RC-10: il motivo vero */
     else h='<p class="spesa-totale"><b>Spesa stimata: '+frc(tot)+'</b><span>senza IVA'+(senza.length?'; manca il prezzo di '+esc(senza.join(', ')):'')+'</span></p>';
-    if(aMano.length&&ps.length&&!vuota) h+='<p class="auto-nota">Senza ricetta, non nella lista: '+esc(unici(aMano).join(', '))+'.</p>';
+    if(aMano.length&&conRic.length) h+='<p class="auto-nota">Senza ricetta, non nella lista: '+esc(unici(aMano).join(', '))+'.</p>';
     if(sp.basiUnita.length) h+='<p class="auto-nota">Basi scritte in grammi o cucchiai, non nella lista: '+esc(sp.basiUnita.join(', '))+'.</p>';
     $('#spesa-ris',velo).innerHTML=h+corpo;
     $$('[data-pronta]',velo).forEach(function(c){ c.onchange=function(){ pronte[c.dataset.pronta]=c.checked; risultato(); var x=$('[data-pronta="'+c.dataset.pronta+'"]',velo); if(x) x.focus(); }; });
     $('#spesa-copia',velo).disabled=vuota; $('#spesa-stampa',velo).disabled=vuota;
-    velo._spesa={ps:conRic,sp:sp,tot:tot,vuota:vuota}; };
+    velo._spesa={ps:conRic,sp:sp,tot:tot,vuota:vuota,esclusi:esclusi(aMano,sp)}; };
+  /* quello che la lista non conta: uguale a schermo, nella copia e sulla stampa (RC-08) */
+  var esclusi=function(aMano,sp){ var l=[]; if(aMano.length) l.push('Senza ricetta, non nella lista: '+unici(aMano).join(', ')+'.'); if(sp.basiUnita.length) l.push('Basi scritte in grammi o cucchiai, non nella lista: '+unici(sp.basiUnita).join(', ')+'.'); return l; };
   var porzioni=function(){ var ps=piattiScelti(), conRic=ps.filter(function(x){return x.r;}), box=$('#spesa-porz',velo); if(!box) return;
     porzioniSommario();
     box.innerHTML=ps.length?ps.map(function(x){ if(!x.r) return '<div class="riga-porz senza"><span><b>'+esc(x.nome)+'</b><small>'+esc(x.quando)+' · senza ricetta</small></span><span class="auto-nota">non contato</span></div>';
@@ -3372,12 +3420,12 @@ function apriSpesa(){
   var intestazione=function(){ var g=conPiatti.filter(function(d){return scelti[d.k];}).map(function(d){var dd=dataDa(d.k);return GIORNI_SETT[dd.getDay()]+' '+dd.getDate();}); return 'Lista della spesa'+(S.locale.nome?', '+S.locale.nome:'')+(g.length?': '+g.join(', '):''); };
   var perQuanti=function(x){ var t={}; x.ps.forEach(function(p){ t[p.r.nome]=(t[p.r.nome]||0)+p.porz; }); return 'Porzioni: '+Object.keys(t).filter(function(n){return t[n]>0;}).map(function(n){return n+' '+t[n];}).join(', ')+'.'; };
   $('#spesa-copia',velo).onclick=function(){ var x=velo._spesa; if(!x||x.vuota) return;
-    var t=[intestazione()].concat(lineeTesto(x.sp)).join('\n');
+    var t=[intestazione()+(x.esclusi.length?' (lista parziale)':''),perQuanti(x)].concat(x.esclusi).concat(lineeTesto(x.sp)).join('\n');
     var fatto=function(){ toast('Lista copiata: incollala in WhatsApp o in una mail al fornitore.'); };
     var vecchio=function(){ var a=document.createElement('textarea'); a.value=t; a.setAttribute('readonly',''); a.className='sr'; document.body.appendChild(a); a.select(); var ok=false; try{ ok=document.execCommand('copy'); }catch(e){} a.remove(); $('#spesa-copia',velo).focus(); if(ok) fatto(); else toast('Il browser non ha permesso di copiare.'); };
     try{ if(navigator.clipboard&&window.isSecureContext) navigator.clipboard.writeText(t).then(fatto,vecchio); else vecchio(); }catch(e){ vecchio(); } };
   $('#spesa-stampa',velo).onclick=function(){ var x=velo._spesa; if(!x||x.vuota) return;
-    var h='<section class="pg st-spesa"><h1>'+esc(intestazione())+'</h1><p class="st-per">'+esc(perQuanti(x))+'</p><div class="st-colonne">';
+    var h='<section class="pg st-spesa"><h1>'+esc(intestazione())+(x.esclusi.length?' (lista parziale)':'')+'</h1><p class="st-per">'+esc(perQuanti(x))+'</p>'+x.esclusi.map(function(e){return '<p class="st-per">'+esc(e)+'</p>';}).join('')+'<div class="st-colonne">';
     var bi=Object.keys(x.sp.basi); if(bi.length) h+='<div class="st-blocco"><h2>Da preparare prima</h2><ul>'+bi.map(function(id){return '<li><span>'+esc(ric(id).nome)+(pronte[id]?' (già pronta)':'')+'</span><b>'+qSpesa('ml',x.sp.basi[id]*1000)+'</b></li>';}).join('')+'</ul></div>';
     SPESA_GRUPPI.forEach(function(g){ var v=vociOrdinate(x.sp,g[0]); if(!v.length) return;
       h+='<div class="st-blocco"><h2>'+g[1]+'</h2><ul>'+v.map(function(y){return '<li><span>'+esc(y.nome)+'</span><b>'+qSpesa(y.u,y.q)+'</b></li>';}).join('')+'</ul></div>'; });
