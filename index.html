@@ -50,6 +50,9 @@
   --moderno-sfondo:#F5F7F6; --moderno-testo:#14201E; --moderno-testo-2:#4A5856; --moderno-accento:#0E5A52; --moderno-linea:#D5DEDB; --giorno-altezza:72px;
   --cucina-colonna-min:260px; --cucina-colonna-max:340px; --cucina-riga:56px; --cucina-bottone-min:140px;
   --foglio-testo:11pt; --foglio-titolo:24pt; --foglio-piatto:12pt; --foglio-sezione:13pt; --foglio-nota:10pt; --foglio-copertina:40pt; --foglio-sottotitolo:14pt;
+  /* versione 10.2: segni di portata (pillola del suo colore) e di stagione (il suo disegno), sempre con la parola */
+  --portata-antipasti:#2E7D8C; --portata-zuppe:#B4601B; --portata-primi:#957400; --portata-secondi:#8C2B4B; --portata-contorni:#4C6A8C; --portata-dolci:#9C3F86; --portata-basi:#6E5C4E;
+  --segno-tinta:14%; --segno-icona:16px; --segno-pallino:8px;
   --foglio-copertina-altezza:250mm; --foglio-spazio-1:1mm; --foglio-spazio-2:2mm; --foglio-spazio-3:4mm; --foglio-spazio-4:8mm;
 }
 
@@ -245,6 +248,15 @@ main{min-width:0}
 .testa{display:grid;grid-template-columns:1fr var(--piatto-grande);gap:var(--spazio-4);align-items:center}
 .testa .piatto,.testa .foto{width:var(--piatto-grande)}
 .occhiello{font-size:var(--testo-piccolo);font-weight:700;color:var(--colore-marca)}
+/* versione 10.2: segni di portata e stagione */
+.segni{display:flex;flex-wrap:wrap;align-items:center;gap:var(--spazio-1) var(--spazio-2);font-size:var(--testo-piccolo);font-weight:400;color:var(--colore-testo-secondario)}
+.seg{display:inline-flex;align-items:center;gap:var(--spazio-1);white-space:nowrap}
+.seg-portata{font-weight:600;color:var(--colore-testo);background:color-mix(in srgb,var(--seg) var(--segno-tinta),var(--colore-superficie));border-radius:var(--tondo);padding:0 var(--spazio-2) 0 var(--spazio-1)}
+.seg-portata::before,.chipf .seg-pallino{content:"";display:inline-block;width:var(--segno-pallino);height:var(--segno-pallino);border-radius:var(--tondo);background:var(--seg);flex:none}
+.chipf .seg-pallino{box-shadow:0 0 0 var(--bordo-fine) var(--colore-superficie);margin-right:var(--spazio-1)}
+.portata-menu h4 .seg-pallino{display:inline-block;width:var(--segno-pallino);height:var(--segno-pallino);border-radius:var(--tondo);background:var(--seg);margin-right:var(--spazio-1)}
+.seg-stagione svg,.chipf .seg-icona svg{width:var(--segno-icona);height:var(--segno-icona);flex:none;vertical-align:middle}
+.chipf .seg-icona{display:inline-flex;margin-right:var(--spazio-1)}
 .titolo{font-family:var(--carattere-libro);font-size:var(--titolo-gigante);line-height:var(--interlinea-titoli);font-weight:700;margin:var(--spazio-2) 0}
 .frase{color:var(--colore-testo-secondario);max-width:var(--riga-frase)}
 .meta{display:flex;flex-wrap:wrap;gap:var(--spazio-4);align-items:center;padding:var(--spazio-3) 0;border-top:var(--bordo-fine) solid var(--colore-linea);border-bottom:var(--bordo-fine) solid var(--colore-linea)}
@@ -1486,6 +1498,18 @@ function chiaveDiz(n){ var k=chiave(n); if(!k||(S.diz&&S.diz[k])) return k; var 
   for(var x=0;x<prove.length;x++){ var kk=m[1]+prove[x]; if(prove[x]!==w&&S.diz&&S.diz[kk]) return kk; } return k; }
 function ric(id){for(var i=0;i<S.ricette.length;i++) if(S.ricette[i].id===id) return S.ricette[i]; return null;}
 function sing(p){return SINGOLARE[p]||p||'Portata da scegliere';}
+/* versione 10.2: segni visivi. La parola resta sempre accanto (chi non distingue i colori legge lo stesso) */
+var DATIVO_DE={Krebstiere:'Krebstieren',Eier:'Eiern',Erdnüsse:'Erdnüssen',Schalenfrüchte:'Schalenfrüchten',Sulfite:'Sulfiten',Weichtiere:'Weichtieren'}; /* «ohne Zutaten mit Eiern» */
+var SEG_PORTATA={Antipasti:'antipasti',Zuppe:'zuppe',Primi:'primi',Secondi:'secondi',Contorni:'contorni',Dolci:'dolci',Basi:'basi'};
+var ICONE_STAGIONE={
+  Primavera:'<svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="6.3" r="3"/><circle cx="17.4" cy="10.2" r="3"/><circle cx="15.3" cy="16.6" r="3"/><circle cx="8.7" cy="16.6" r="3"/><circle cx="6.6" cy="10.2" r="3"/></g><circle cx="12" cy="12" r="1.9" fill="currentColor"/></svg>',
+  Estate:'<svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></g></svg>',
+  Autunno:'<svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 3.5C11 3.5 4.5 8.5 4.5 15.5c0 1.6.4 3 1 4.2C15 19.5 20 13 20 3.5z"/><path d="M3.5 21c3-4.5 7-8 12-11"/></g></svg>',
+  Inverno:'<svg viewBox="0 0 24 24" aria-hidden="true"><g stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"><path d="M12 2.5v19M3.8 7.25l16.4 9.5M3.8 16.75l16.4-9.5"/><path d="M9.5 3.8L12 6.3l2.5-2.5M9.5 20.2L12 17.7l2.5 2.5"/></g></svg>',
+  'Tutto l’anno':'<svg viewBox="0 0 24 24" aria-hidden="true"><g stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.5 4v4h-4"/></g></svg>'};
+function colorePortata(p){ return SEG_PORTATA[p]?'var(--portata-'+SEG_PORTATA[p]+')':'var(--colore-testo-secondario)'; }
+function segnoPortata(p){ return '<span class="seg seg-portata" style="--seg:'+colorePortata(p)+'">'+esc(sing(p))+'</span>'; }
+function segnoStagione(st){ st=st||'Tutto l’anno'; return '<span class="seg seg-stagione">'+(ICONE_STAGIONE[st]||ICONE_STAGIONE['Tutto l’anno'])+esc(st)+'</span>'; }
 function fmt(n){var r=Math.round(n*100)/100; var s=Number.isInteger(r)?String(r):String(r); return s.replace('.',',');}
 var PL={pz:'pz',spicchi:'spicchi',foglie:'foglie',rametti:'rametti',cucchiai:'cucchiai',cucchiaini:'cucchiaini'}, SG={pz:'pz',spicchi:'spicchio',foglie:'foglia',rametti:'rametto',cucchiai:'cucchiaio',cucchiaini:'cucchiaino'};
 /* «20 g di burro» nel passaggio, con 10 porzioni invece di 4, diventa «50 g»: si scalano solo pesi e volumi, mai minuti, gradi o centimetri */
@@ -1498,19 +1522,21 @@ function passiHTML(r,p){ return r.passi.filter(function(s){return s.trim();}).ma
 /* versione 9: le temperature in neretto, solo con l'unità scritta («180 gradi», «65 °C», «160-170 °C»), mai un numero da solo */
 function conTemp(h){ return String(h).replace(/(\d+(?:[.,]\d+)?(?:\s*[-–]\s*\d+(?:[.,]\d+)?)?\s*(?:°\s*[CF]\b|°|gradi\b))/g,'<b class="temp">$1</b>'); }
 function qta(i,r,p){ if(i.u==='q.b.') return 'q.b.'; if((i.u==='ml'||i.u==='cl')&&+i.q>0) return qta({q:i.q/(i.u==='ml'?100:10),u:'dl'},r,p); if(i.q===''||i.q==null||isNaN(i.q)) return ''; var v=i.q*p/r.porzioni, u=i.u;
-  if(u==='g'){v=v<20?Math.max(1,Math.round(v)):v<200?Math.round(v/5)*5:Math.round(v/10)*10; return v>=1000? fmt(Math.round(v/10)/100)+' kg' : v+' g';}
-  if(u==='kg'){ if(v<1) return Math.max(1,Math.round(v*1000/5)*5)+' g'; v=Math.round(v*100)/100; return fmt(v)+' kg';}
+  /* versione 10.2: dosi esatte (al grammo, al decilitro); prima si arrotondava a 5 o 10 g senza dirlo (prova esterna, B2) */
+  if(u==='kg'){ v=v*1000; u='g'; }
+  if(u==='g'){ v=v<10?Math.max(0.1,Math.round(v*10)/10):Math.round(v); return v>=1000? String(Math.round(v)/1000).replace('.',',')+' kg' : fmt(v)+' g';}
+  if(u==='l'&&v<1){ v=v*10; u='dl'; } /* versione 10.2: anche i litri piccoli diventano dl, cl o ml (prima minimo mezzo decilitro) */
   /* sotto il mezzo decilitro si passa a cl e ml: niente minimo fisso che falsa le dosi piccole */
   if(u==='dl'&&v>=0.5&&v<2){ return fmt(Math.round(v*20)/2)+' cl'; }
-  if(u==='dl'){ if(v<0.5){ var cl=v*10; return cl>=1? fmt(Math.round(cl*2)/2)+' cl' : Math.max(1,Math.round(v*100))+' ml'; } v=Math.round(v*2)/2; return v>=10? fmt(v/10)+' l' : fmt(v)+' dl';}
-  if(u==='l'){ if(v<1) return fmt(Math.max(0.5,Math.round(v*20)/2))+' dl'; v=Math.round(v*10)/10; return fmt(v)+' l';}
+  if(u==='dl'){ if(v<0.5){ var cl=v*10; return cl>=1? fmt(Math.round(cl*2)/2)+' cl' : Math.max(1,Math.round(v*100))+' ml'; } v=Math.round(v*10)/10; return v>=10? fmt(Math.round(v*10)/100)+' l' : fmt(v)+' dl';}
+  if(u==='l'){ if(v<1) return fmt(Math.max(0.5,Math.round(v*100)/10))+' dl'; v=Math.round(v*100)/100; return fmt(v)+' l';}
   /* tanti cucchiai di un liquido: in decilitri (1 cucchiaio = 0,15 dl) */
-  if((u==='cucchiai'||u==='cucchiaini')&&v>=10&&unitaTipica(i.nome)==='dl') return fmt(Math.round(v*(u==='cucchiai'?0.15:0.05)*2)/2)+' dl';
+  if((u==='cucchiai'||u==='cucchiaini')&&v>=10&&unitaTipica(i.nome)==='dl') return fmt(Math.round(v*(u==='cucchiai'?0.15:0.05)*10)/10)+' dl';
   /* pezzi e cucchiai: a mezzi sotto le 10 unità (½ cipolla), interi sopra */
   if(u==='cucchiai'&&v<0.5){ v=v*3; u='cucchiaini'; }
   if(v<0.375) return (u==='cucchiaini'||u==='cucchiai')?'un pizzico':'¼ '+SG[u];
-  /* a mezzi solo sotto le 2 unità (½ cipolla); spicchi, foglie e rametti sempre interi */
-  v=(u==='spicchi'||u==='foglie'||u==='rametti')?Math.max(1,Math.round(v)):v<2?Math.max(0.5,Math.round(v*2)/2):Math.round(v);
+  /* a mezzi sotto le 10 unità (2½ cucchiai, ½ cipolla); spicchi, foglie e rametti sempre interi */
+  v=(u==='spicchi'||u==='foglie'||u==='rametti')?Math.max(1,Math.round(v)):v<10?Math.max(0.5,Math.round(v*2)/2):Math.round(v);
   var testo=v===0.5?'½':(v%1?Math.floor(v)+'½':String(v)); return testo+' '+(v<=1?SG[u]:PL[u]); }
 function porz(r){return S.porz[r.id]||r.porzioni;}
 /* le basi si misurano in litri di resa, alcuni dolci in pezzi */
@@ -1656,7 +1682,7 @@ function disegnaEntrata(){
    '<li>'+ICONE.ricettario+'<div><b>Lo chef scrive la ricetta una volta.</b><span>Allergeni e provenienza arrivano dagli ingredienti: li controlli tu.</span></div></li>'+
    '<li>'+ICONE.oggi+'<div><b>Il menu del giorno si fa con un tocco.</b><span>Lo metti online e i clienti lo vedono dal QR sul tavolo, in italiano e in tedesco, con gli allergeni.</span></div></li>'+
    '<li>'+ICONE.stampante+'<div><b>Il foglio si impagina da solo.</b><span>A4, A5, vetrina, cavaliere, oppure un’immagine per WhatsApp.</span></div></li>'+
-  '</ol></aside><p class="nota-proto">Prototipo con dati inventati, senza password. Le modifiche restano finché non ricarichi la pagina. <button class="link" id="da-zero">Ricomincia da zero</button></p></div></div>';
+  '</ol></aside><p class="nota-proto">Prototipo con dati inventati. Le modifiche restano finché non ricarichi la pagina. <button class="link" id="da-zero">Ricomincia da zero</button></p></div></div>';
   $$('[data-ruolo]').forEach(function(b){b.onclick=function(){S.ruolo=b.dataset.ruolo; if(S.ruolo==='cliente'){S.vista='cliente';} else S.vista=S.ruolo==='chef'?'ricettario':'oggi'; S.oggiGiorno=null; chiudiToast(); disegna(); window.scrollTo(0,0); rimettiFuoco(null,null);};});
   $('#da-zero').onclick=function(){nuovoStato(true);S.primiPassi=true;toast('Ripartito da zero: ricettario e menu sono vuoti. Scegli come entrare.');};
 }
@@ -1727,6 +1753,10 @@ function passaFiltri(r,f,q){
   if(f.stato==='condivise'&&!r.condivisa) return false;
   if(f.stato==='completare'&&!a.mancano.length) return false;
   return true; }
+/* versione 10.2: una ricetta appena scritta o importata si vede nell'elenco: se un filtro la nasconde, i filtri si tolgono e lo si dice */
+var filtriPrima=null;
+function rimettiFiltri(){ if(!filtriPrima) return; S.q=filtriPrima.q; S.portata=filtriPrima.portata; S.f=filtriPrima.f; filtriPrima=null; S.selPrima=null; S.tieniAperta=true; disegnaRicettario(); S.tieniAperta=false; }
+function mostraInElenco(r,zitto){ if(!r||filtrate().indexOf(r)>=0) return false; filtriPrima={q:S.q,portata:S.portata,f:clona(S.f)}; S.q=''; S.portata='Tutte'; S.f=filtriVuoti(); if(!zitto) setTimeout(function(){ toast('Ho tolto ricerca e filtri, per mostrarti «'+(r.nome||'la ricetta')+'».',rimettiFiltri,'Rimetti i filtri'); },0); return true; }
 function filtrate(){
   var q=piega(S.q), tutte=visibiliPerRuolo();
   var l=tutte.filter(function(r){return passaFiltri(r,S.f,q);});
@@ -1764,7 +1794,7 @@ function bottoneLato(){return S.latoChiuso?'<button class="icona apri-lato" data
 function disegnaElenco(){
   var el=$('#elenco'); if(!el) return;
   var tutte=visibiliPerRuolo(), lista=filtrate();
-  if(S.sel&&!lista.some(function(r){return r.id===S.sel;})&&S.modo==='leggi'&&window.innerWidth>760&&!(S.torna&&S.torna.a===S.sel)&&!S.tornaMenu){ S.sel=lista.length?lista[0].id:null; setTimeout(disegnaPagina,0); }
+  if(S.sel&&!lista.some(function(r){return r.id===S.sel;})&&S.modo==='leggi'&&window.innerWidth>760&&!(S.torna&&S.torna.a===S.sel)&&!S.tornaMenu&&!S.tieniAperta){ S.sel=lista.length?lista[0].id:null; setTimeout(disegnaPagina,0); }
   var portatePresenti=PORTATE.concat(S.portateExtra).filter(function(p){return tutte.some(function(r){return r.portata===p;});});
   var nf=quantiFiltri(), att=chipsAttivi();
   /* testata: titolo e un solo bottone; sotto la ricerca con i filtri dentro; sotto le portate */
@@ -1780,7 +1810,7 @@ function disegnaElenco(){
    h+='<div class="cerca">'+ICONE.cerca+'<input type="search" id="q" placeholder="Cerca ricetta o ingrediente" value="'+esc(S.q)+'" aria-label="Cerca una ricetta o un ingrediente">'+
       '<button class="btn-filtri" id="apri-filtri" aria-label="Filtri'+(nf?', '+nf+' attivi':'')+'">'+ICONE.filtri+'<span>Filtri</span>'+(nf?'<i>'+nf+'</i>':'')+'</button></div>'+
     (att.length?'<div class="filtri attivi">'+att.map(function(c){return '<button class="chipf scelto" data-togli-chip="'+esc(c[0])+'" aria-label="Togli '+esc(c[1])+'">'+esc(c[1])+ICONE.x+'</button>';}).join('')+'</div>':'')+
-    '<div class="filtri portate">'+['Tutte'].concat(portatePresenti).map(function(p){return '<button class="chipf" data-portata="'+esc(p)+'" aria-pressed="'+(S.portata===p)+'">'+esc(p)+'</button>';}).join('')+'</div>'+
+    '<div class="filtri portate">'+['Tutte'].concat(portatePresenti).map(function(p){return '<button class="chipf" data-portata="'+esc(p)+'" aria-pressed="'+(S.portata===p)+'">'+(p==='Tutte'?'':'<span class="seg-pallino" style="--seg:'+colorePortata(p)+'"></span>')+esc(p)+'</button>';}).join('')+'</div>'+
     '<div class="conta-riga"><p class="conta">'+contaTesto(lista,tutte)+'</p>'+(eChef()?'<button class="link icona-testo" id="esporta">'+ICONE.libro+'<span>Esporta il libro</span></button>':'')+'</div>'+
     '<div class="righe">'+righeHTML(lista)+'</div>';
   } else {
@@ -1791,7 +1821,7 @@ function disegnaElenco(){
   /* la ricerca aggiorna solo l'elenco: il campo non si ricrea mentre si scrive */
   var q=$('#q'); if(q){ q.oninput=function(){S.q=q.value;var l=filtrate();$('.righe',el).innerHTML=righeHTML(l);$('.conta',el).textContent=contaTesto(l,visibiliPerRuolo());legaRighe(el);
     /* RC-19: sul computer la ricetta aperta segue la ricerca */
-    if(window.innerWidth>760&&S.modo==='leggi'){ if(S.selPrima===undefined||S.selPrima===null) S.selPrima=S.sel;
+    if(window.innerWidth>760&&S.modo==='leggi'&&!S.tieniAperta){ if(S.selPrima===undefined||S.selPrima===null) S.selPrima=S.sel;
       var prima=S.selPrima, vuole=!S.q.trim()?prima:(l.some(function(r){return r.id===prima;})?prima:(l.some(function(r){return r.id===S.sel;})?S.sel:(l.length?l[0].id:null)));
       if(!S.q.trim()) S.selPrima=null;
       if(vuole!==S.sel||!l.length){ S.sel=vuole; esciDalleBasi(); S.tornaMenu=null; disegnaPagina(); $$('.riga-ric',el).forEach(function(b){b.setAttribute('aria-current',String(b.dataset.id===S.sel));}); } } }; }
@@ -1829,7 +1859,7 @@ function apriFiltri(){
   var racc=[]; tutte.forEach(function(r){(r.raccolte||[]).forEach(function(x){if(racc.indexOf(x)<0)racc.push(x);});});
   var gruppo=function(titolo,chiave_,voci,multi){return '<div class="gruppo"><h3>'+titolo+'</h3><div class="filtri">'+voci.map(function(v){
       var on=chiave_==='ordina'?S.ordina===v[0]:multi?S.f.senza.indexOf(v[0])>=0:S.f[chiave_]===v[0];
-      return '<button class="chipf" data-g="'+chiave_+'" data-v="'+esc(v[0])+'" aria-pressed="'+on+'">'+esc(v[1])+'</button>';}).join('')+'</div></div>';};
+      return '<button class="chipf" data-g="'+chiave_+'" data-v="'+esc(v[0])+'" aria-pressed="'+on+'">'+(chiave_==='stagione'&&ICONE_STAGIONE[v[0]]?'<span class="seg-icona">'+ICONE_STAGIONE[v[0]]+'</span>':'')+esc(v[1])+'</button>';}).join('')+'</div></div>';};
   var disegnaF=function(){
     var n=filtrate().length;
     velo.innerHTML='<div class="foglio filtri-foglio" role="dialog" aria-modal="true" aria-labelledby="tf"><h2 id="tf">Filtri</h2>'+
@@ -1855,7 +1885,7 @@ function apriFiltri(){
 function contaTesto(lista,tutte){var nb=tutte.filter(function(r){return r.portata==='Basi';}).length, nr=tutte.length-nb; return (lista.length===tutte.length?(nb&&nr?nr+' ricett'+(nr===1?'a':'e')+' e '+nb+' bas'+(nb===1?'e':'i'):tutte.length+' ricett'+(tutte.length===1?'a':'e')):lista.length+' di '+tutte.length+' ricette')+(eChef()?'':' · lo chef sceglie cosa condividere');}
 function righeHTML(lista){return lista.length?lista.map(function(r){var a=analisi(r);
       return '<button class="riga-ric" data-id="'+r.id+'" aria-current="'+(r.id===S.sel)+'">'+piattoHTML(r)+
-       '<span><b>'+esc(r.nome||'Ricetta senza titolo')+'</b><small>'+esc(sing(r.portata))+' · '+r.stagione+(a.mancano.length?' · da completare':'')+(r.importata&&eChef()?' · importata, da controllare':'')+'</small></span>'+
+       '<span><b>'+esc(r.nome||'Ricetta senza titolo')+'</b><small class="segni">'+segnoPortata(r.portata)+segnoStagione(r.stagione)+(a.mancano.length?'<span>da completare</span>':'')+(r.importata&&eChef()?'<span>importata, da controllare</span>':'')+'</small></span>'+
        (r.esempio?'<span class="privata">Esempio</span>':r.condivisa||S.ruolo==='tutti'?'':'<span class="privata">Privata</span>')+'</button>';}).join(''):'<p class="auto-nota">Nessuna ricetta con questi filtri.</p>';}
 function legaRighe(el){$$('.riga-ric',el).forEach(function(b){b.onclick=function(){if(b.dataset.id!==S.sel)pulisciVuota();S.tornaMenu=null;esciDalleBasi();S.selPrima=null;S.sel=b.dataset.id;S.modo='leggi';disegnaRicettario();if(window.innerWidth<=760)window.scrollTo(0,0);};});}
 function apriFinestra(velo,chiudi){ var da=document.activeElement, sel=selettoreDi(da);
@@ -1882,7 +1912,7 @@ function pulisciVuota(){ var r=ric(S.sel); if(!r) return;
   if(vuota){S.ricette.splice(S.ricette.indexOf(r),1);S.sel=null;S.modo='leggi';} }
 function nuovaRicetta(){
   pulisciVuota();
-  var id='r'+Date.now();
+  var id='r'+Date.now(); S.nuovaId=id; /* versione 10.2: solo la ricetta nuova, finita con «Fatto», toglie i filtri che la nasconderebbero */
   S.ricette.unshift({id:id,nome:'',portata:'',stagione:'Tutto l’anno',porzioni:4,tempo:'',condivisa:S.ruolo==='tutti',usi:0,frase:'',ingr:[I('',null,'g')],passi:['']});
   S.sel=id; S.modo='modifica'; disegnaRicettario(); setTimeout(function(){var t=$('#m-nome');if(t)t.focus();},0);
 }
@@ -1905,7 +1935,7 @@ function disegnaPagina(){
   var dove=S.ruolo!=='cliente'&&r.portata!=='Basi'?doveNelMenu(r.id):[];
   var h='<button class="link indietro'+(torna||daMenu?' visibile':'')+'" id="indietro">← '+(torna?esc(torna.nome):daMenu?'Menu di '+quandoTesto(daMenu):'Tutte le ricette')+'</button>'+
    (serve?'<p class="nota-legge serve-base">'+serveBaseTesto(r,torna,serve)+'</p>':'')+
-   '<div class="testa"><div><div class="occhiello">'+esc(sing(r.portata))+' · '+r.stagione+'</div><h2 class="titolo">'+esc(r.nome||'Ricetta senza titolo')+'</h2>'+(r.frase?'<p class="frase">'+esc(r.frase)+'</p>':'')+
+   '<div class="testa"><div><div class="occhiello segni">'+segnoPortata(r.portata)+segnoStagione(r.stagione)+'</div><h2 class="titolo">'+esc(r.nome||'Ricetta senza titolo')+'</h2>'+(r.frase?'<p class="frase">'+esc(r.frase)+'</p>':'')+
      riassuntoRicetta(r,a)+
      (dove.length?'<p class="dove-menu">Nel menu: '+dove.slice(0,4).map(function(x){return '<button class="link" data-vai-menu="'+x.k+'|'+x.s+'">'+quandoTesto(x.k)+' a '+nomeServ(x.s).toLowerCase()+(x.online?' (online)':'')+'</button>';}).join(', ')+(dove.length>4?' e altri '+(dove.length-4):'')+'</p>':'')+
      (S.ruolo==='chef'?'<label class="interruttore condivisa-testa"><input type="checkbox" id="condivisa" '+(r.condivisa?'checked':'')+'> Condivisa con il locale</label><small class="auto-nota">'+(r.condivisa?'La vede anche il proprietario e la può mettere nel menu.':'Privata: la vedi solo tu.')+'</small>':'')+
@@ -1985,9 +2015,9 @@ function legaBasi(){$$('#lista-ingr [data-apri]').forEach(function(b){b.onclick=
   /* versione 9: la base si apre già alla quantità che serve, solo per questa volta (uscendo torna com'era) */
   /* versione 9 (revisione): una base aperta da un'altra base resta calcolata; si torna indietro un passo alla volta */
   S.torna={da:S.sel,a:id,q:q,prima:S.porz[id],su:S.torna&&S.torna.a===S.sel?S.torna:null}; if(q!=null) S.porz[id]=q; S.sel=id;S.modo='leggi';disegnaRicettario();window.scrollTo(0,0);};});}
-/* quanta base serve al piatto, nella resa della base: litri al mezzo litro in su sopra 1 l e al decilitro sotto; pezzi e porzioni interi. null se le unità non si confrontano */
+/* quanta base serve al piatto, nella resa della base: litri al centilitro (versione 10.2), pezzi e porzioni interi. null se le unità non si confrontano */
 function quantoServe(ib,t){ var b=ric(ib.base); if(!b||!(+ib.q>0)||!(t.porzioni>0)) return null; var v=ib.q*porz(t)/t.porzioni, x=resaDi(b), CL={l:1,dl:0.1,cl:0.01,ml:0.001};
-  if(x==='litri'){ if(CL[ib.u]==null) return null; var L=v*CL[ib.u]; return L>=1?Math.ceil(L*2-1e-9)/2:Math.max(0.1,Math.ceil(L*10-1e-9)/10); }
+  if(x==='litri'){ if(CL[ib.u]==null) return null; var L=v*CL[ib.u]; return Math.max(0.01,Math.round(L*100)/100); } /* versione 10.2: la quantità scritta nel piatto (1,25 l restano 1,25 l; prima al mezzo litro) */
   if(ib.u==='pz') return Math.max(1,Math.ceil(v-1e-9)); return null; }
 function esciDalleBasi(){ var tq=S.torna; while(tq){ S.torna=tq; rimettiScalaBase(); tq=tq.su; } S.torna=null; }
 function rimettiScalaBase(){ var t=S.torna; if(!t||t.q==null) return; if(t.prima===undefined) delete S.porz[t.a]; else S.porz[t.a]=t.prima; t.q=null; }
@@ -2268,7 +2298,7 @@ function cartaServizio(k,s){
     return '<section class="servizio" data-serv="'+s+'">'+testa+'<div class="serv-vuoto"><p>Nessun piatto. '+(conRicette?'Prendili dal ricettario, scrivili o copia un menu già fatto.':'Scrivi il primo piatto: nome, prezzo e allergeni, in un minuto.')+'</p>'+piede+suggHTML(sug,s,k)+'</div></section>';
   }
   var prob=(st==='online'||st==='pronto')?problemi(k,s):[], fuori=prob.filter(function(x){return x.piatto;}).map(function(x){return x.piatto.uid;});
-  var corpo=portateDelMenu(m).map(function(por){ return '<div class="portata-menu"><h4>'+esc(por)+'</h4>'+m.piatti.filter(function(p){return p.portata===por;}).map(function(p){return rigaPiatto(k,s,m,p,oggiOnline,fuori.indexOf(p.uid)>=0);}).join('')+'</div>'; }).join('');
+  var corpo=portateDelMenu(m).map(function(por){ return '<div class="portata-menu"><h4><span class="seg-pallino" style="--seg:'+colorePortata(por)+'"></span>'+esc(por)+'</h4>'+m.piatti.filter(function(p){return p.portata===por;}).map(function(p){return rigaPiatto(k,s,m,p,oggiOnline,fuori.indexOf(p.uid)>=0);}).join('')+'</div>'; }).join('');
   var avviso=prob.length?'<div class="avviso"><span>'+(fuori.length?(fuori.length===1?'1 piatto non si vede online: mancano dei dati.':fuori.length+' piatti non si vedono online: mancano dei dati.'):prob[0].tipo==='locale'?'Manca il nome del locale.':prob[0].tipo==='orari'?'Manca l’orario '+delServ(s)+'.':'Il prezzo fisso non è completo.')+'</span> <button class="btn quieto piccolo" data-pubblica="'+s+'">Completa i dati</button></div>':'';
   var vecchi=m.stampati?Object.keys(m.stampati).filter(function(id){return m.stampati[id]!==firmaMenu(k,s);}):[];
   if(m.stampatiSett&&firmaSettimana(m.stampatiSett.giorni,s)!==m.stampatiSett.firma) vecchi.push('settimana');
@@ -2313,10 +2343,10 @@ function rigaPiatto(k,s,m,p,oggiOnline,nonOnline){ var i=infoPiatto(p), aperto=S
     (aperto?opzioniPiatto(p,i,oggiOnline):'')+'</div>'; }
 /* costo merce accanto al prezzo; se è alto, «Usa» mette il prezzo minimo con un tocco */
 function notaCosto(p,m){ var r=p.ric&&ric(p.ric); if(!r||resaDi(r)) return ''; var c=costoRicetta(r); if(!costoCompleto(c)||!(c.porz>0)) return p.prezzo!=null?'<small class="costo-piatto">costo incompleto: mancano prezzi d’acquisto</small>':'';
-  var minimo=prezzoConsigliato(c.porz), soglia=Math.ceil(c.porz/MERCE_ALTA*(1+IVA_RISTORAZIONE)*2)/2; /* sopra il 35 %: si propone il prezzo che lo riporta al 35 %, non quello dell'obiettivo */
+  var minimo=prezzoConsigliato(c.porz); /* versione 10.2: sopra il 35 % si propone lo stesso prezzo della ricetta (obiettivo 30 %), non un secondo numero */
   if(p.prezzo==null) return coperto(p,m)?'':'<button class="link usa-prezzo" data-usa-prezzo="'+p.uid+'|'+minimo+'">Usa '+prezzoTesto(minimo)+'</button>';
   var q=quotaMerce(c.porz,p.prezzo);
-  return '<small class="costo-piatto'+(q>MERCE_ALTA?' alto':'')+'">costo '+Math.round(q*100)+'%'+(q>MERCE_ALTA?', alto':'')+'</small>'+(q>MERCE_ALTA?'<button class="link usa-prezzo" data-usa-prezzo="'+p.uid+'|'+soglia+'">Usa '+prezzoTesto(soglia)+' (35\u00a0%)</button>':''); }
+  return '<small class="costo-piatto'+(q>MERCE_ALTA?' alto':'')+'">costo '+Math.round(q*100)+'%'+(q>MERCE_ALTA?', alto':'')+'</small>'+(q>MERCE_ALTA&&minimo>p.prezzo?'<button class="link usa-prezzo" data-usa-prezzo="'+p.uid+'|'+minimo+'">Usa '+prezzoTesto(minimo)+', il prezzo proposto</button>':''); }
 function opzioniPiatto(p,i,online){ var r=p.ric?ric(p.ric):null;
   var stesse=visibiliPerRuolo().filter(function(x){return x.portata===p.portata&&x.id!==p.ric&&!analisi(x).mancano.length;});
   return '<div class="opzioni-piatto">'+
@@ -2335,7 +2365,7 @@ function suggHTML(sug,s,k){ if(!sug.length) return ''; var conPronta=k&&sug.some
 function legaOggi(k){
   var v=$('#vista');
   if($('#apri-spesa',v)) $('#apri-spesa',v).onclick=apriSpesa;
-  if($('#apri-preparare',v)) $('#apri-preparare',v).onclick=function(){apriPreparare();};
+  if($('#apri-preparare',v)) $('#apri-preparare',v).onclick=function(){apriPreparare(S.oggiGiorno&&S.oggiGiorno!==chiaveGiorno(new Date())?S.oggiGiorno:undefined);}; /* versione 10.2: il giorno guardato nel Menu */
   $$('[data-apri-preparare]',v).forEach(function(b){ b.onclick=function(){apriPreparare(b.dataset.apriPreparare,b.dataset.sezione);}; });
   $$('[data-apri-temp]',v).forEach(function(b){ b.onclick=function(){apriTemperature();}; });
   $$('[data-vai-costo]',v).forEach(function(b){ b.onclick=function(){ S.oggiGiorno=b.dataset.vaiCosto; disegnaOggi(); var x=$('.costo-piatto.alto'); if(x){ x.scrollIntoView({block:'center'}); var u=x.parentElement&&x.parentElement.querySelector('[data-usa-prezzo]'); if(u) u.focus({preventScroll:true}); } }; });
@@ -2486,14 +2516,14 @@ function apriScelta(k,serv){
   chiudiToast(); var velo=document.createElement('div'); velo.className='velo'; var q='', aggiunti=[];
   var disegnaS=function(){ var m=menuDi(k,serv), sug=suggerimenti(k,serv).map(function(r){return r.id;});
     var l=visibiliPerRuolo().filter(function(r){return r.portata&&r.portata!=='Basi'&&(!q||piega(r.nome).indexOf(q)>=0);});
-    var riga=function(r){var dentro=m&&m.piatti.some(function(p){return p.ric===r.id;}),inc=analisi(r).mancano.length;
-      return '<div class="riga-scelta">'+piattoHTML(r)+'<span><b>'+esc(r.nome)+'</b><small>'+esc(sing(r.portata))+(S.prezzi[r.id]!=null?' · '+prezzoTesto(S.prezzi[r.id]):'')+(inc?' · da completare':'')+'</small></span>'+
+    var riga=function(r,conPortata){var dentro=m&&m.piatti.some(function(p){return p.ric===r.id;}),inc=analisi(r).mancano.length;
+      return '<div class="riga-scelta">'+piattoHTML(r)+'<span><b>'+esc(r.nome)+'</b><small class="segni">'+(conPortata?segnoPortata(r.portata):'')+segnoStagione(r.stagione)+(S.prezzi[r.id]!=null?'<span>'+prezzoTesto(S.prezzi[r.id])+'</span>':'')+(inc?'<span>da completare</span>':'')+'</small></span>'+
         '<button class="btn'+(dentro?' scelto':'')+' piccolo" data-scegli="'+r.id+'" aria-pressed="'+dentro+'"'+(inc&&!dentro?' disabled':'')+'>'+(dentro?'Aggiunto':'Aggiungi')+'</button></div>';};
     velo.innerHTML='<div class="foglio" role="dialog" aria-modal="true" aria-labelledby="ts"><h2 id="ts">'+nomeServ(serv)+' di '+quandoTesto(k)+'</h2>'+
       (m&&m.stato==='online'&&giorniFa(k)===0?'<p class="nota-legge">È online: quello che aggiungi lo vedono subito i clienti.</p>':'')+
       '<div class="cerca">'+ICONE.cerca+'<input type="search" id="q-scelta" placeholder="Cerca nel ricettario" value="'+esc(q)+'" aria-label="Cerca nel ricettario"></div>'+
-      (!q&&sug.length?'<h3 class="sotto-titolo">Suggerite: di stagione, non servite da 3 settimane</h3>'+l.filter(function(r){return sug.indexOf(r.id)>=0;}).map(riga).join(''):'')+
-      PORTATE.filter(function(p){return p!=='Basi'&&l.some(function(r){return r.portata===p&&(q||sug.indexOf(r.id)<0);});}).map(function(p){return '<h3 class="sotto-titolo">'+esc(p)+'</h3>'+l.filter(function(r){return r.portata===p&&(q||sug.indexOf(r.id)<0);}).map(riga).join('');}).join('')+
+      (!q&&sug.length?'<h3 class="sotto-titolo">Suggerite: di stagione, non servite da 3 settimane</h3>'+l.filter(function(r){return sug.indexOf(r.id)>=0;}).map(function(r){return riga(r,true);}).join(''):'')+
+      PORTATE.filter(function(p){return p!=='Basi'&&l.some(function(r){return r.portata===p&&(q||sug.indexOf(r.id)<0);});}).map(function(p){return '<h3 class="sotto-titolo">'+esc(p)+'</h3>'+l.filter(function(r){return r.portata===p&&(q||sug.indexOf(r.id)<0);}).map(function(r){return riga(r,false);}).join('');}).join('')+
       (!l.length?'<p class="auto-nota">'+(q?(S.ricette.some(function(r){return piega(r.nome).indexOf(q)>=0;})?'C’è una ricetta dello chef con questo nome, ma non è condivisa: chiedigli di condividerla, così ha il costo e gli allergeni.':'Nessuna ricetta con questo nome.'):'Il ricettario è vuoto.')+'</p>':'')+
       '<div class="piede"><button class="link" id="a-mano">Scrivi un piatto a mano</button><button class="btn pieno" id="fatto-scelta">Fatto</button></div></div>';
     var qi=$('#q-scelta',velo); qi.oninput=function(){q=piega(qi.value);var pos=qi.selectionStart;disegnaS();var n=$('#q-scelta',velo);n.focus();n.setSelectionRange(pos,pos);};
@@ -2514,6 +2544,7 @@ function piattoAMano(k,serv,esistente,poi){
   var disegnaM=function(){ var m=p.man;
     velo.innerHTML='<div class="foglio" role="dialog" aria-modal="true" aria-labelledby="tm"><h2 id="tm">'+(esistente?'Il piatto':'Piatto scritto a mano')+'</h2>'+
      '<label class="campo"><span>Nome *</span><input class="inp" id="m-p-nome" value="'+esc(p.nome)+'" placeholder="Es. Polenta con funghi"></label>'+
+     '<label class="campo"><span>Nome in tedesco, per i clienti (facoltativo)</span><input class="inp" id="m-p-de" value="'+esc(p.nomeDe||'')+'" placeholder="Es. Polenta mit Pilzen" lang="de"></label>'+
      '<label class="campo"><span>Descrizione</span><input class="inp" id="m-p-descr" value="'+esc(p.descr)+'"></label>'+
      '<div class="campo"><span>Portata *</span><div class="filtri">'+PORTATE.filter(function(x){return x!=='Basi';}).concat(S.portateExtra).concat(p.portata&&PORTATE.concat(S.portateExtra).indexOf(p.portata)<0?[p.portata]:[]).map(function(x){return '<button class="chipf" data-mp-portata="'+esc(x)+'" aria-pressed="'+(p.portata===x)+'">'+esc(x)+'</button>';}).join('')+
        (nuovaPortata?'<label class="cerca" style="flex:1 1 var(--larghezza-menu)"><span class="sr">Nuova portata</span><input id="m-p-nuova" placeholder="Es. Piatto del giorno"></label>':'<button class="chipf" id="m-p-piu">+ Nuova</button>')+'</div></div>'+
@@ -2525,7 +2556,7 @@ function piattoAMano(k,serv,esistente,poi){
        '</div></div>'+(m.carne===false?'<div class="campo"><span>Per i clienti</span><div class="filtri">'+[['','Nessuna indicazione'],['Vegetariano','Vegetariano'],['Vegano','Vegano']].map(function(d){var v=m.veg===true?'Vegetariano':(m.veg||''), no=d[0]==='Vegano'&&m.all.some(function(a){return /^(Latte|Uova)$/.test(a);});return '<button class="chipf" data-mp-veg="'+d[0]+'" aria-pressed="'+(v===d[0])+'"'+(no?' disabled title="Con latte o uova non è vegano"':'')+'>'+d[1]+'</button>';}).join('')+'</div>'+(m.all.some(function(a){return /^(Latte|Uova)$/.test(a);})?'<small class="auto-nota">Con latte o uova non può essere vegano.</small>':'')+'</div>':'')+
      (m.carne?'<label class="campo"><span>Provenienza * (che carne o pesce, e da dove)</span><input class="inp" id="m-p-prov" value="'+esc(m.prov)+'" placeholder="'+(m.all.some(function(a){return /^(Pesce|Crostacei|Molluschi)$/.test(a);})?'Es. Trota: Svizzera':'Es. Manzo: Svizzera')+'"></label><small class="auto-nota" id="m-p-prov-err" role="status"></small>':'')+
      '<div class="piede"><button class="link" id="m-p-annulla">Annulla</button><button class="btn pieno" id="m-p-salva"'+(String(p.nome).trim()&&p.portata?'':' disabled')+'>'+(esistente?'Salva':'Aggiungi')+'</button></div></div>';
-    var leggi=function(){p.nome=$('#m-p-nome',velo).value;p.descr=$('#m-p-descr',velo).value;p.prezzo=leggiPrezzo($('#m-p-prezzo',velo).value);var pv=$('#m-p-prov',velo);if(pv)p.man.prov=pv.value;var np=$('#m-p-nuova',velo);if(np&&np.value.trim()){p.portata=normPortata(np.value);nuovaPortata=false;}}; /* la portata nuova entra fra quelle del locale solo al salvataggio */
+    var leggi=function(){p.nome=$('#m-p-nome',velo).value;p.nomeDe=$('#m-p-de',velo).value.trim();p.descr=$('#m-p-descr',velo).value;p.prezzo=leggiPrezzo($('#m-p-prezzo',velo).value);var pv=$('#m-p-prov',velo);if(pv)p.man.prov=pv.value;var np=$('#m-p-nuova',velo);if(np&&np.value.trim()){p.portata=normPortata(np.value);nuovaPortata=false;}}; /* la portata nuova entra fra quelle del locale solo al salvataggio */
     var rifai=function(f){leggi();disegnaM();var x=f&&$(f,velo);if(x)x.focus();};
     /* il ridisegno (per proporre gli allergeni dal nome) aspetta il tocco dopo, che altrimenti andrebbe perso */
     $('#m-p-nome',velo).onchange=$('#m-p-descr',velo).onchange=function(){ setTimeout(function(){ if(!document.body.contains(velo)) return; var sel=selettoreDi(document.activeElement); leggi(); rifai(sel&&velo.contains(document.activeElement)?sel:null); },250); };
@@ -2700,7 +2731,7 @@ function disegnaCliente(){
     var disponibili=piatti.filter(function(p){return !p.finito;}), buoni=disponibili.filter(function(p){return !spentoP(p);}).length;
     /* una riga sola, solo fatti: niente «puoi mangiarlo» (le tracce non sono dichiarate; REVISIONI pezzo 4 n. 11) */
     var conta=!c.senza.length||!disponibili.length?'':buoni?
-      (l==='de'?'Ohne '+listaA(c.senza,'und')+': '+buoni+' von '+disponibili.length+' Gerichten. ':'Senza '+listaA(c.senza,'e')+': '+buoni+' '+(buoni===1?'piatto':'piatti')+' su '+disponibili.length+'. ')+T.tracce:
+      (l==='de'?'Ohne Zutaten mit '+listaA(c.senza,'oder').replace(/[A-Za-zÄÖÜäöüß]+/g,function(w){return DATIVO_DE[w]||w;})+': '+buoni+' von '+disponibili.length+' Gerichten. ':'Senza ingredienti con '+listaA(c.senza,'o')+': '+buoni+' '+(buoni===1?'piatto':'piatti')+' su '+disponibili.length+'. ')+T.tracce:
       (l==='de'?'Heute enthalten alle Gerichte '+listaA(c.senza,'oder')+': Bitte fragen Sie unser Personal.':'Oggi tutti i piatti contengono '+listaA(c.senza,'o')+': chiedete al personale.');
     var rigaConta=conta?'<p class="cli-nota cli-conta" role="status">'+esc(conta)+'</p>':'';
     var filtro=c.filtroAperto?
@@ -3279,7 +3310,7 @@ function disegnaModifica(pg,r){ if(S.legamiRic!==r.id){ S.legamiAperto=null; S.l
     if(!r.portata){toast('Scegli la portata.');$('#m-portata').focus();return;}
     r.ingr=r.ingr.filter(function(i){return String(i.nome||'').trim();}); if(r.legami){ var LL=r.legami; r.legami=r.passi.map(function(p,k){return p.trim()?(LL[k]||null):undefined;}).filter(function(x){return x!==undefined;}); } r.passi=r.passi.filter(function(p){return p.trim();});
     $$('.velo').forEach(function(v){v.remove();}); r.ingr.forEach(function(i){delete i._cambia;});
-    S.modo='leggi'; if(versoElenco) S.sel=null; disegnaRicettario(); window.scrollTo(0,0); };
+    S.modo='leggi'; if(versoElenco) S.sel=null; else if(r.id===S.nuovaId) mostraInElenco(r); S.nuovaId=null; disegnaRicettario(); window.scrollTo(0,0); };
   $('#fine').onclick=function(){esci(false);};
   if($('#m-condivisa')) $('#m-condivisa').onchange=function(e){r.condivisa=e.target.checked;salvato();disegnaElenco();toast(r.condivisa?'Ora il proprietario vede questa ricetta.':'Ricetta privata: la vedi solo tu.');};
   $('#m-elimina').onclick=function(){ S.modo='leggi'; eliminaRicetta(r); };
@@ -3560,9 +3591,11 @@ function leggiTesto(t){
   if(resaTesto) out.passi.unshift(resaTesto);
   if(out.nome&&out.nome===out.nome.toUpperCase()&&/[A-Z]/.test(out.nome)) out.nome=out.nome.charAt(0)+out.nome.slice(1).toLowerCase();
   out.ocr=ocr;
-  out.portata=portataDaNome(out.nome); out.tempo=tempoDaPassi(out.passi);
+  out.portata=portataProposta(out); out.tempo=tempoDaPassi(out.passi);
   return out;
 }
+/* versione 10.2: «Crema di …» con zucchero o miele e senza sale né brodo: dolce o zuppa? niente proposta, sceglie lo chef */
+function portataProposta(o){ var p=portataDaNome(o&&o.nome); if(p==='Zuppe'&&/\bcrema di\b/.test(piega(o.nome||''))){ var ii=' '+(o.ingr||[]).map(function(i){return piega(i.nome||'');}).join(' ')+' '; if(/ (zucchero|miele|cioccolat)/.test(ii)&&!/ (brodo|cipoll|aglio|pepe|porro|porri|dado|scalogn)/.test(ii)) return ''; } return p; }
 /* la portata proposta dal titolo (si può cambiare) */
 function portataDaNome(n){ n=piega(n||'');
   if(/(pasta\s*frolla|pan di spagna|zuppa inglese|crema (pasticcera|catalana|inglese|chantilly)|^crema (di |al |alla )?(mascarpone|cioccolat|caffe|limone|vaniglia))/.test(n)) return 'Dolci';
@@ -3929,7 +3962,7 @@ function impStato(){ var I0=S.imp, vere=ricetteVere(), out=[], titoli=Object.cre
   I0.voci.forEach(function(v){ var o=impLeggi(v), s={v:v,o:o,motivi:[],note:[]};
     var nomiIngr=o.ingr.map(function(i){return chiave(String(i.nome).replace(/\s+\d+$/,''));}).filter(Boolean), comeTitoli=o.ingr.filter(function(i){ var n=chiave(String(i.nome).replace(/\s+\d+$/,'')); return titoli[n]&&titoli[n]!==v&&(i.u==='pz'&&Number.isInteger(i.q)||/\s\d+$/.test(i.nome)); }).length;
     s.indice=comeTitoli>=1&&comeTitoli>=nomiIngr.length*0.6&&(comeTitoli>=2||!o.passi.length);
-    s.portata=v.st.portataScelta?v.st.portata:(v.cap||(usate[v.id]?'Basi':'')||portataDaNome(o.nome)||(o.resa&&o.resa.tipo==='litri'?'Basi':''));
+    s.portata=v.st.portataScelta?v.st.portata:(v.cap||(usate[v.id]?'Basi':'')||portataProposta(o)||(o.resa&&o.resa.tipo==='litri'?'Basi':''));
     var ps=v.st.porzScritte!=null?parseFloat(String(v.st.porzScritte).replace(',','.')):NaN;
     s.porz=ps>0?ps:o.porzioni>0?o.porzioni:o.resa?o.resa.n:(s.portata!=='Basi'&&I0.porzTutte>0?I0.porzTutte:0);
     s.porzDaTesto=o.porzioni>0||!!o.resa||ps>0;
@@ -4014,9 +4047,9 @@ function impImporta(){ var I0=S.imp; if(!I0) return; var stato=impStato(), pront
   var saltate=stato.filter(function(s){return s.gia||s.doppia||s.indice;});
   I0.voci=I0.voci.filter(function(v){ return !saltate.some(function(s){return s.v===v;}); });
   if(!I0.voci.length) S.imp=null;
-  S.ricette=nuove.concat(S.ricette); S.modo='leggi'; S.sel=window.innerWidth>760?nuove[0].id:null; S.q=''; S.portata='Tutte'; disegnaRicettario(); window.scrollTo(0,0);
+  S.ricette=nuove.concat(S.ricette); S.modo='leggi'; S.sel=window.innerWidth>760?nuove[0].id:null; var cerano=!!S.q||S.portata!=='Tutte'||JSON.stringify(S.f)!==JSON.stringify(filtriVuoti()); S.q=''; S.portata='Tutte'; S.f=filtriVuoti(); disegnaRicettario(); window.scrollTo(0,0);
   var n=nuove.length, resto=S.imp?S.imp.voci.length:0;
-  toast((n===1?'1 ricetta importata.':n+' ricette importate.')+(resto?(resto===1?' 1 resta da guardare.':' '+resto+' restano da guardare.'):''),function(){ var ids=nuove.map(function(r){return r.id;}); S.ricette=S.ricette.filter(function(r){return ids.indexOf(r.id)<0;});
+  toast((n===1?'1 ricetta importata.':n+' ricette importate.')+(resto?(resto===1?' 1 resta da guardare.':' '+resto+' restano da guardare.'):'')+(cerano?' Ricerca e filtri tolti, per mostrartele.':''),function(){ var ids=nuove.map(function(r){return r.id;}); S.ricette=S.ricette.filter(function(r){return ids.indexOf(r.id)<0;});
     if(!S.imp) S.imp=I0; S.imp.voci=prima; S.imp.note=notePrima; S.imp.vista='elenco'; S.sel=null; S.modo='incolla'; disegnaRicettario(); toast('Tolte. Gli ingredienti ricordati restano.'); }); }
 function impEsci(){ S.modo='leggi'; S.sel=null; disegnaRicettario(); }
 
@@ -4066,7 +4099,7 @@ function editorIncolla(pg,st,opz){ var v=opz.voce||null, I0=S.imp, kv=v?I0.voci.
       '<div class="azioni imp-altre"><button class="link" id="imp-dividi">Dividi</button>'+(kv>0?'<button class="link" id="imp-unisci">Unisci alla ricetta sopra</button>':'')+'<button class="link" id="imp-togli">Togli dall’elenco</button></div>'
     :'<div class="azioni" id="imp-azioni-una"><button class="btn pieno" id="crea-incolla" disabled>Crea la ricetta</button><span class="auto-nota" id="manca-incolla" aria-live="polite"></span><button class="link" id="esempio-incolla">Prova con un esempio</button></div>');
   var ta=$('#testo-incolla'), ant=$('#anteprima-incolla'); ta.value=st.testo;
-  var proposta=function(o){ if(v){ var s=impStato().filter(function(x){return x.v===v;})[0]; return s?s.portata:portataDaNome(o.nome); } return portataDaNome(o.nome)||(o.resa&&o.resa.tipo==='litri'?'Basi':''); };
+  var proposta=function(o){ if(v){ var s=impStato().filter(function(x){return x.v===v;})[0]; return s?s.portata:portataProposta(o); } return portataProposta(o)||(o.resa&&o.resa.tipo==='litri'?'Basi':''); };
   var leggi=function(){ st.testo=ta.value; return leggiSt(st); };
   var domande=function(o){ return domandeSt(st,o); };
   var corr=st.corr;
@@ -4139,10 +4172,10 @@ function editorIncolla(pg,st,opz){ var v=opz.voce||null, I0=S.imp, kv=v?I0.voci.
       var uguale=ricetteVere().filter(function(x){ return firmaRicetta(x)===firmaRicetta(nr); })[0];
       if(uguale){ S.sel=uguale.id; S.modo='leggi'; disegnaRicettario(); window.scrollTo(0,0); toast('C’è già una ricetta uguale: eccola.'); return; }
       var nome0=nr.nome, rinom=false; if(S.ricette.some(function(x){ return chiave(x.nome)===chiave(nr.nome); })){ var nn=1, prova=nome0+' (importata)'; while(S.ricette.some(function(x){ return chiave(x.nome)===chiave(prova); })){ nn++; prova=nome0+' (importata '+nn+')'; } nr.nome=prova; rinom=true; }
-      S.ricette.unshift(nr);
+      S.ricette.unshift(nr); var tolti=mostraInElenco(nr,true);
       /* se non manca niente si va subito alla ricetta finita; altrimenti alla modifica, con le domande aperte */
       var manca=analisi(ric(id)).mancano.length;
-      S.sel=id;S.modo=manca?'modifica':'leggi';disegnaRicettario();window.scrollTo(0,0);toast((rinom?'Creata come «'+nr.nome+'»: c’era già «'+nome0+'».':'Ricetta creata.')+(manca?' Rispondi alle domande segnate.':''));
+      S.sel=id;S.modo=manca?'modifica':'leggi';disegnaRicettario();window.scrollTo(0,0);toast((rinom?'Creata come «'+nr.nome+'»: c’era già «'+nome0+'».':'Ricetta creata.')+(tolti?' Ho tolto ricerca e filtri per mostrartela.':'')+(manca?' Rispondi alle domande segnate.':''),tolti?rimettiFiltri:null,'Rimetti i filtri');
       if(manca) setTimeout(function(){ var d=$('.domande button, .domande input'); if(d){ d.scrollIntoView({block:'center'}); d.focus({preventScroll:true}); } },0); };
   } else {
     $('#imp-fatto').onclick=function(){ impSalvaVoce(v,st); var pz=impPezziTesto(st.testo); if(pz.length>1){ impSostituisci(v,st.testo); return; } I0.vista='elenco'; disegnaRicettario(); window.scrollTo(0,0); };
@@ -4900,6 +4933,7 @@ function apriPreparare(kIniziale,sezione){
   chiudiToast(); var velo=document.createElement('div'); velo.className='velo'; S.pronte=S.pronte||[];
   var oggi=chiaveGiorno(new Date());
   var conPiatti=giorni().filter(function(d){ return !chiuso(d.k)&&serviziDi(d.k).some(function(s){var m=menuDi(d.k,s);return m&&m.piatti.length;}); });
+  if(kIniziale&&!conPiatti.some(function(d){return d.k===kIniziale;})) setTimeout(function(){ toast('Per '+quandoTesto(kIniziale)+' non c’è niente da preparare: il menu è vuoto o il locale è chiuso.'); },0);
   var kd=giornoDaPreparare(), k=kIniziale&&conPiatti.some(function(d){return d.k===kIniziale;})?kIniziale:(conPiatti.filter(function(d){return d.k===kd;})[0]||conPiatti.filter(function(d){return d.k>=kd;})[0]||conPiatti[0]||{k:oggi}).k;
   var aperto=null, scongelo=null; /* la riga con il modulo «Pronto» aperto: 'b|id' o 'p|id'; la preparazione da scongelare */
   var disegnaF=function(){ var pr=produzione(k), oggiK=oggi;
