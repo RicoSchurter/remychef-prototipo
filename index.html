@@ -1898,7 +1898,7 @@ function disegnaPagina(){
     if($('#prima-incolla')) $('#prima-incolla').onclick=apriImporta;
     return; }
   if(S.modo==='modifica'&&eChef()){disegnaModifica(pg,r);return;}
-  var a=analisi(r), d=dieta(a), p=porz(r), conf=S.conferme[r.id];
+  var a=analisi(r), d=dieta(a), p=porz(r), conf=S.conferme[r.id], manAll=a.mancano.filter(function(x){ return !/\(provenienza\)$/.test(x); }); /* versione 10.1: gli ingredienti senza tipo lasciano gli allergeni incompleti */
   var mia=eChef();
   var torna=S.torna&&S.torna.a===r.id&&ric(S.torna.da)?ric(S.torna.da):null, daMenu=!torna&&S.tornaMenu?S.tornaMenu:null;
   var iBase=torna?torna.ingr.filter(function(x){return x.base===r.id;})[0]:null, serve=iBase?qta(iBase,torna,porz(torna)):'';
@@ -1926,7 +1926,7 @@ function disegnaPagina(){
    '<div class="colonne"><div><h3>Ingredienti</h3><ul class="ingr" id="lista-ingr">'+ingrHTML(r,p)+'</ul></div>'+
    '<div><h3>Preparazione</h3><ol class="passi" id="lista-passi">'+passiHTML(r,p)+'</ol>'+puntiCritici(r)+'</div></div>'+
    '<div class="riquadro">'+
-    '<div class="riga"><b>Allergeni</b>'+(a.all.length?a.all.map(function(x){return '<span class="etichetta">'+x+'</span>';}).join(''):'<span>'+(a.mancano.length?'Da calcolare':'Nessuno dei 14')+'</span>')+(mia?'<button class="link" id="controlla">Controlla</button>':'')+'</div>'+
+    '<div class="riga"><b>Allergeni</b>'+(a.all.length?a.all.map(function(x){return '<span class="etichetta">'+x+'</span>';}).join('')+(manAll.length?'<span class="manca">non completi</span>':''):'<span>'+(a.mancano.length?'Da calcolare':'Nessuno dei 14')+'</span>')+(mia?'<button class="link" id="controlla">Controlla</button>':'')+'</div>'+
     (a.prov.length?'<div class="riga"><b>Provenienza</b><span>'+a.prov.map(esc).join(' · ')+'</span></div>':'')+
     (d?'<div class="riga"><b>Dieta</b>'+(conf===false?'<span>Non indicata</span>'+(mia?'<button class="link" id="ripristina">Proponi di nuovo «'+d+'»</button>':''):'<span class="etichetta">'+d+'</span>'+(conf?'<span class="auto">confermato</span>'+(mia?'<button class="link" id="togli">Non indicarlo</button>':''):'<span class="auto">proposto: ai clienti compare dopo la conferma</span>'+(mia?'<button class="link" id="conferma">Conferma</button><button class="link" id="togli">Non indicarlo</button>':'')))+'</div>':'')+
     '<small class="auto">Calcolati in automatico dai tuoi ingredienti. Controlla le etichette dei prodotti che usi.</small></div>'+
@@ -1971,7 +1971,7 @@ function riassuntoRicetta(r,a){ if(a.mancano.length) return ''; var c=costoRicet
 function doveNelMenu(id){ var l=[]; giorni().forEach(function(d){ if(chiuso(d.k)) return; serviziDi(d.k).forEach(function(sv){ var m=menuDi(d.k,sv); if(m&&m.piatti.some(function(p){return p.ric===id||p.alt===id;})) l.push({k:d.k,s:sv,online:statoMenu(d.k,sv)==='online'}); }); }); return l; }
 function vaiAlMenu(k,serv){ chiudiToast(); S.tornaMenu=null; S.vista='oggi'; S.oggiGiorno=k; disegna(); var x=serv&&$('[data-serv="'+serv+'"]'); if(x){ x.scrollIntoView({block:'start'}); var f=$('h3',x); } else window.scrollTo(0,0); }
 /* la nota dell'incolla («120 g + 80 g per mantecare») vale solo finché la quantità è quella */
-function notaIngr(i){ return i.nota&&i.nota.q===i.q?i.nota.testo:''; }
+function notaIngr(i){ var n=i.nota&&i.nota.q===i.q?i.nota.testo:''; return i.parte?i.parte+(n?', '+n:''):n; } /* versione 10.1: la parte («impasto») resta anche se la quantità cambia */
 function ingrHTML(r,p){return r.ingr.filter(function(i){return String(i.nome||'').trim();}).map(function(i){
    return '<li><span>'+(i.base?'<button class="link base" data-apri="'+i.base+'" title="Apri la ricetta base">'+esc(i.nome)+'</button>':esc(i.nome))+(i.base&&S.numeriLibro&&S.numeriLibro[i.base]?' (ricetta '+S.numeriLibro[i.base]+')':'')+(i.prov?'<span class="prov">'+esc(i.prov)+'</span>':'')+(notaIngr(i)&&p===r.porzioni?'<span class="prov">'+esc(notaIngr(i))+'</span>':'')+'</span><span class="q">'+qta(i,r,p)+'</span></li>';}).join('');}
 function numPorz(v){ return String(v).replace('.',','); }
@@ -3397,8 +3397,8 @@ function primaMaiuscola(x){x=String(x).trim();return x.charAt(0).toUpperCase()+x
 /* versione 10: le porzioni scritte nel testo; le righe che non sono ingredienti; la resa delle basi */
 var RE_WHATSAPP=/^\[\d{1,2}[./]\d{1,2}[./]\d{2,4},?\s+\d{1,2}[:.]\d{2}(?::\d{2})?\]\s*[^:]{1,40}:\s*/;
 var RE_PORZ=/(?:^|\s|\()(?:per|dosi per|x)\s*(\d+)\s*(?:persone|porzioni|porz\.?|pers\.?|pax|coperti)?\)?\s*$|(?:^|\s|\()(\d+)\s*(?:persone|porzioni|porz\.?|pers\.?|pax|coperti)(?![a-z])|^(?:porzioni|persone|dosi|coperti)\s*:?\s*(\d+)$/i;
-var RE_FUORI=/^(?:(?:totale|totali|subtotale|food\s*cost|costo|costi|prezzo|prezzi|iva|mwst|margine|data|revisione|allergeni|allergene)(?:\s+(?:di vendita|vendita|merce|porzione|per porzione|totale|unitario|lordo|netto|ricetta|di revisione|revisione|di creazione|creazione|%))?(?=\s*[:\t%]|\s+[\d(]|\s*$)|(?:per|resa)\s+\d+(?:[.,]\d+)?\s*(?:kg|g)\b)/i;
-var RE_ETICHETTA_PARTE=/^(?:ripieno|impasto|farcia|farcitura|guarnizione|decorazione|copertura|composizione|montaggio|salse|per (?:il|la|lo|i|gli|le) [a-zà-ù]+|per l[’'][a-zà-ù]+)\s*:?$/i;
+var RE_FUORI=/^(?:(?:totale|totali|subtotale|food\s*cost|costo|costi|prezzo|prezzi|iva|mwst|margine|data|revisione|allergeni|allergene)(?:\s+(?:di vendita|vendita|merce|porzione|per porzione|totale|unitario|lordo|netto|ricetta|di revisione|revisione|di creazione|creazione|%))?(?=\s*[:\t%]|\s+[\d(]|\s+(?:chf|fr\.?|eur|€)(?![a-z])|\s*$)|colonne non importate:|(?:costo|costi|prezzo|prezzi|food\s*cost)\b[^\d\n]{0,30}?(?:chf|fr\.|€|eur)(?![a-z])|(?:per|resa)\s+\d+(?:[.,]\d+)?\s*(?:kg|g)\b)/i;
+var RE_ETICHETTA_PARTE=/^(?:ripieno|impasto|farcia|farcitura|guarnizione|decorazione|copertura|composizione|montaggio|salse|per (?:il|la|lo|i|gli|le) [a-zà-ù]+(?: [a-zà-ù]+){0,2}|per l[’'][a-zà-ù]+(?: [a-zà-ù]+){0,2})\s*:?$/i;
 var RE_ETICHETTA=/^(piatto|ricetta|nome del piatto|nome|titolo|denominazione)\s*:\s*(.+)$/i;
 /* lettere lette al posto delle cifre in un testo copiato da una foto: «5OO q» → «500 g», «l00 g» → «100 g», «2S0 g» → «250 g» */
 function impOcr(x){ return String(x).replace(/(^|[\s(])([0-9OoIlS]{2,})(?=[\s,]|$)/g,function(m,a,n){ if(!/\d/.test(n)||!/[OoIlS]/.test(n)) return m; var y=n.replace(/[Il](?=[0-9Oo])/g,'1').replace(/(\d)S(?=[0-9Oo])/g,'$15'); if(/^[0-9Oo]+$/.test(y)) y=y.replace(/[Oo]/g,'0'); return /^\d+$/.test(y)?a+y:m; }).replace(/(\d)\s*q(?=\s+[a-zà-ù]{3,})(?!\.?\s*b)/gi,'$1 g'); }
@@ -3409,6 +3409,7 @@ function impUnisciCelle(r){ var o=[], i=0, num=/^\d+(?:[.,]\d+)?$/, nu=/^\d+(?:[
     if(nome&&b!=null&&nu.test(b)&&un(b.match(nu)[1])){ o.push(a+' '+b); i+=2; continue; }
     o.push(a); i++; }
   return o; }
+var IMP_OCCHIO=0; /* versione 10.1: 2 = sotto «Ingredienti» o una parte, senza punto finale; 1 = lì, ma con il punto; 0 = altrove */
 /* una riga di ingrediente, se lo è: «250 g farina», «1 litro di brodo», «Patate 1 kg», «Parmigiano q.b.», «un pizzico di sale» */
 function rigaIngrediente(x){ x=x.replace(/^[-•*–]\s*/,'').replace(/[;.]$/,'').trim(); if(!x||x.length>70) return null; var m;
   /* versione 9: «3 lt circa», «200 g abbondanti»: la parola in fondo non blocca la quantità */
@@ -3433,7 +3434,8 @@ function rigaIngrediente(x){ x=x.replace(/^[-•*–]\s*/,'').replace(/[;.]$/,''
   /* «uova 3 + 1»: stessa cosa, si somma */
   var mu=x.match(/^([a-zà-ù][^\d+]*?)\s+(\d+)\s*\+\s*(\d+)\s*((?:per|da)\s+.+)?$/i); if(mu){ var gu=rigaIngrediente(mu[1]+' '+(+mu[2]+ +mu[3])); if(gu){ gu.nota={testo:mu[2]+' + '+mu[3]+(mu[4]?' '+mu[4]:''),q:gu.q}; return gu; } }
   if((m=x.match(/^(.+?)\s*[:,–-]?\s*q\.?\s*b\.?$/i))) return I(primaMaiuscola(m[1]),null,'q.b.');
-  if((m=x.match(/^(?:un|una|uno)\s+(?:pizzico|presa|goccio|filo)\s+(?:di\s+|d[’'])?(.+)$/i))) return I(primaMaiuscola(m[1]),null,'q.b.');
+  var aOcchio=function(nome,misura){ var w=String(nome).trim().split(/\s+/); if(IMP_OCCHIO<2&&(IMP_OCCHIO===0&&(w.length>4||/\b(a|al|alla|allo|ai|alle|per)\b/i.test(nome))||/\b(nel|nella|nello|nei|nelle|nell|sul|sulla|sui|sulle|sopra|poi|fino|prima|dopo|quando)\b/i.test(nome)||w.some(function(x){ return x.length>4&&/(are|ere|ire)$/i.test(x)&&!/^(polvere|bicchiere)$/i.test(x); }))) return null; var g=I(primaMaiuscola(nome),null,'q.b.'); g.nota={testo:misura.toLowerCase(),q:null}; return g; };
+  if((m=x.match(/^((?:un|una|uno)\s+(?:pizzico|presa|goccio|filo|pugno|manciata|spruzzo|spruzzata|spolverata))\s+(?:di\s+|d[’'])?(.+)$/i))) return aOcchio(m[2],m[1]);
   /* misure a parole: «mezzo litro di vino», «un bicchiere di vino», «un litro di brodo» */
   if((m=x.match(/^(mezzo|un|una|due|tre)\s+(litro|litri|bicchiere|bicchieri|tazza|tazze|chilo|etto|etti)\s+(?:di\s+|d[’'])?(.+)$/i))){ var nn={mezzo:0.5,un:1,una:1,due:2,tre:3}[m[1].toLowerCase()], uu=m[2].toLowerCase();
     var q2=/^litr/.test(uu)?[nn*10,'dl']:/^bicchier/.test(uu)?[nn*1.5,'dl']:/^tazz/.test(uu)?[nn*2.5,'dl']:/^chilo/.test(uu)?[nn,'kg']:[nn*100,'g']; return I(primaMaiuscola(m[3]),q2[0],q2[1]); }
@@ -3442,7 +3444,8 @@ function rigaIngrediente(x){ x=x.replace(/^[-•*–]\s*/,'').replace(/[;.]$/,''
   /* versione 10: «1/2 bicchiere vino bianco», «1 bottiglia di Merlot»: la misura resta nella nota */
   if((m=x.match(new RegExp('^'+NUM_TESTO+'\\s+(bicchier[ei]|tazz[ae]|bottigli[ae])\\s+(?:di\\s+|d[’\'])?(.+)$','i')))){ var qn=leggiNumero(m[1]), mu=m[2].toLowerCase(), dl=/^bicch/.test(mu)?1.5:/^tazz/.test(mu)?2.5:7.5; if(qn){ var gb=I(primaMaiuscola(m[3]),Math.round(qn*dl*100)/100,'dl'); gb.nota={testo:m[1]+' '+mu,q:gb.q}; return gb; } }
   /* «una noce di burro», «burro una noce»: quantità a occhio */
-  if((m=x.match(/^(?:una|un)\s+noce\s+(?:di\s+|d[’'])(.+)$/i))||(m=x.match(/^(.+?)\s*[:,–-]?\s+(?:una|un)\s+(?:noce|pizzico|presa|goccio|filo)$/i))) return I(primaMaiuscola(m[1]),null,'q.b.');
+  if((m=x.match(/^(?:una|un)\s+noce\s+(?:di\s+|d[’'])(.+)$/i))) return aOcchio(m[1],'una noce');
+  if((m=x.match(/^(.+?)\s*[:,–-]?\s+((?:una|un)\s+(?:noce|pizzico|presa|goccio|filo|pugno|manciata|spruzzo|spolverata))$/i))) return aOcchio(m[1],m[2]);
   if((m=x.match(/^(?:un|una|uno)\s+((?:spicchio|foglia|rametto|ciuffo|mazzetto|bustina)\s+.+)$/i))) return I(primaMaiuscola(m[1]),1,'pz');
   var conv=function(q,u,nome){ if(q==null||!nome) return null; nome=nome.replace(/^(di|d[’'])\s*/i,'').trim(); if(!nome) return null;
     nome=nome.replace(/\bcirca\b/i,'').replace(/\s+/g,' ').trim(); if(!nome) return null;
@@ -3487,8 +3490,12 @@ function leggiTesto(t){
   righe=impUnisciCelle(righe);
   var ocr=[]; righe=righe.map(function(x){ var y=impOcr(x); if(y!==x) ocr.push(x); return y; });
   var out={nome:'',ingr:[],passi:[],porzioni:0,fuori:[],resa:null}, modo='', m;
-  var rePorz=RE_PORZ;
-  righe.forEach(function(x,k){
+  var rePorz=RE_PORZ, parte='', parteForte=false, resaTesto='';
+  /* versione 10.1: «Per la pasta frolla» è una parte; «Per la frittura olio», «Per il servizio caldo» fra i passaggi no */
+  var parteOk=function(x){ var w=x.replace(/\s*:$/,'').replace(/^per\s+(?:il|la|lo|i|gli|le|l[’'])\s*/i,'').trim().split(/\s+/); if(w.length===1) return true;
+    if(!/^(crema|salsa|pasta|glassa|base|farcia|farcitura|ripieno|frolla|impasto|guarnizione|marinata|panatura|decorazione|copertura|bagna|ganache|mousse|brisée|sfoglia|sugo|brodo|condimento|polpette)$/i.test(w[0])&&w.some(function(y){ return notoEsatto(y); })) return false;
+    return /:$/.test(x)||!(modo==='passi'||out.passi.length); };
+  var riga=function(x,k){
     /* versione 10: «Per 5 litri», «Resa 3 l» sono la resa della ricetta; «Totale», «Food cost», «Allergeni: …» non sono ingredienti (si mostrano «lasciate fuori») */
     /* versione 10: «Piatto: Risotto», «Ricetta: …» danno il titolo (le schede di calcolo cominciano con «Calcolazione ricetta») */
     var et=x.match(RE_ETICHETTA); if(et&&et[2].trim().length>1){ if(out.nome&&out.nome!==et[2].trim()) out.fuori.push(out.nome); out.nome=et[2].trim(); return; }
@@ -3496,13 +3503,15 @@ function leggiTesto(t){
     if(k===1&&out.nome&&(/ricett|raccolt|quaderno|menu|le mie|cucina d|\b(19|20)\d\d\b|\s[-–]\s/i.test(out.nome)||!portataDaNome(out.nome)&&portataDaNome(x)&&righe[2]&&(RE_PORZ.test(righe[2])||RE_ING_RICETTA.test(righe[2])))&&!notoEsatto(x)&&!out.ingr.length&&!out.passi.length&&x.length<=60&&!RE_PORZ.test(x)&&!RE_ING_RICETTA.test(x)&&!/^(ingredienti|preparazione|procedimento)\b/i.test(x)&&!rigaIngrediente(x)&&(x===x.toUpperCase()&&/[A-Z]/.test(x)||(righe[2]&&(RE_PORZ.test(righe[2])||RE_ING_RICETTA.test(righe[2]))))){ out.fuori.push(out.nome); out.nome=x.replace(/[:.]$/,''); return; }
     var mr=x.match(RE_RESA); if(mr&&(out.nome||k>0)){ if(out.porzioni||out.resa||out.passi.length){ out.fuori.push(x); return; } var nr=parseFloat(mr[1].replace(',','.')), ur=mr[2].toLowerCase(); nr=ur==='dl'?nr/10:ur==='cl'?nr/100:ur==='ml'?nr/1000:nr; out.resa={n:Math.min(999,Math.round(nr*100)/100||0.01),tipo:/^p/i.test(ur)?'pezzi':'litri'}; return; }
     if(RE_FUORI.test(x)&&(out.nome||k>0)){ out.fuori.push(x); return; }
+    if(/^(resa|rende)\b/i.test(x)&&out.nome&&!out.passi.length&&!RE_PORZ.test(x)&&!resaTesto){ resaTesto=x; return; }
     var mp=x.length<60?x.match(rePorz):null; var porz=mp?+(mp[1]||mp[2]||mp[3]):0;
-    if(/^(ingredienti|occorrente|ti servono)\b/i.test(x)||/^ingr\w*\s*:?$/i.test(x)){modo='ingr'; if(porz) out.porzioni=porz; return;}
+    if(/^(ingredienti|occorrente|ti servono)\b/i.test(x)||/^ingr\w*\s*:?$/i.test(x)){modo='ingr'; var pi=x.match(/^ingredienti\s+(per\s+(?:il|la|lo|i|gli|le|l[’'])\s*[a-zà-ù][^:\d]{1,30}?)\s*:?$/i); parte=pi?pi[1].toLowerCase():''; parteForte=!!parte; if(porz) out.porzioni=porz; return;}
     /* anche scritti male: «Prepazione:», «Procedimeto» */
     /* versione 10: «Ripieno», «Impasto», «Salse» da soli sono il nome di una parte: sotto vengono altri ingredienti */
     /* solo la parola da sola: «Salsa di soia» resta un ingrediente (soia) */
-    if(out.nome&&(RE_ETICHETTA_PARTE.test(x)||impCapitolo(x))){ modo='ingr'; return; }
-    if(/^(preparazione|procedimento|esecuzione|metodo|come si fa)\b/i.test(x)||/^(prep|proc|esec)\w*\s*:?$/i.test(x)){modo='passi'; return;}
+    if(out.nome&&(RE_ETICHETTA_PARTE.test(x)&&parteOk(x)||impCapitolo(x))){ modo='ingr'; parte=RE_ETICHETTA_PARTE.test(x)?x.replace(/\s*:$/,'').toLowerCase():''; parteForte=!!parte; return; }
+    if(out.nome&&RE_ETICHETTA_PARTE.test(x)&&modo==='ingr'&&!out.passi.length){ out.ingr.push(I(primaMaiuscola(x.replace(/\s*:$/,'')),null,'q.b.')); return; }
+    if(/^(preparazione|procedimento|esecuzione|metodo|come si fa)\b/i.test(x)||/^(prep|proc|esec)\w*\s*:?$/i.test(x)){modo='passi'; parte=''; parteForte=false; return;}
     if(porz&&x.length<60){
       /* «Gnocchi di zucca x 6 pers»: le porzioni si prendono, il resto è il titolo */
       var resto=x.replace(mp[0],' ').replace(/[\s(),:–-]+$/,'').replace(/^[\s(),:–-]+/,'').trim();
@@ -3512,7 +3521,7 @@ function leggiTesto(t){
       out.porzioni=porz;
       if(!out.nome&&!out.ingr.length&&!out.passi.length&&resto.length>2&&!rigaIngrediente(resto)) out.nome=resto.replace(/[:.]$/,'');
       return; }
-    if(modo!=='passi'){ var ing=(/^\d+\s*([.)]|[-–]\s)\s*/.test(x))?null:rigaIngrediente(x);
+    if(modo!=='passi'){ IMP_OCCHIO=modo==='ingr'&&(!out.passi.length||parteForte)?(/[.!]$/.test(x)?1:2):0; var ing=(/^\d+\s*([.)]|[-–]\s)\s*/.test(x))?null:rigaIngrediente(x); IMP_OCCHIO=0;
       /* versione 10: «Ricettario 2026», «Menu 2» in prima riga sono un titolo, non un ingrediente senza unità */
       /* è un titolo se il numero è un anno, o se sotto ci sono le porzioni o «Ingredienti»; «Gamberi rossi 12 pz» resta un ingrediente */
       if(ing&&!out.nome&&!out.ingr.length&&!out.passi.length&&ing.u==='pz'&&/^[^\d].*\s\d+$/.test(x)&&(/\s(19|20)\d\d$/.test(x)&&!dentroAlNome(x.replace(/\s\d+$/,''))||righe[k+1]&&(RE_PORZ.test(righe[k+1])||RE_ING_RICETTA.test(righe[k+1])))){ out.nome=x.replace(/[:.]$/,''); return; }
@@ -3540,12 +3549,15 @@ function leggiTesto(t){
       if(modo==='ingr'&&x.length<40&&!/[.!?:]$/.test(x)&&x.split(/\s+/).length<=4){out.ingr.push(I(primaMaiuscola(x.replace(/^[-•–]\s*/,'')),null,'q.b.'));return;} }
     if(modo!=='passi'){
       if(!out.nome&&!out.ingr.length&&!out.passi.length&&x.length<80){out.nome=x.replace(/[:.]$/,'');return;} }
-    if(/:$/.test(x)&&x.length<40){ modo='ingr'; return; } /* «Per la salsa:»: sotto ci sono altri ingredienti */
+    if(/:$/.test(x)&&x.length<40){ modo='ingr'; parte=x.replace(/\s*:$/,'').toLowerCase(); parteForte=false; return; } /* «Per la salsa:»: sotto ci sono altri ingredienti */
     /* versione 10: una riga che continua la frase di prima (testo da una foto) si unisce al passaggio sopra */
     var ul=out.passi.length?out.passi[out.passi.length-1]:'';
     if(ul&&!/[.!?:;]$/.test(ul)&&(/^[a-zà-ù°),]/.test(x)||/^\d+\s*°/.test(x))&&!rigaIngrediente(x)){ out.passi[out.passi.length-1]=ul+' '+x; return; }
     out.passi.push(x.replace(/^(\d+\s*[.)]|\d+\s*[-–]\s+|[-•*–])\s*/,''));
-  });
+  };
+  /* versione 10.1: gli ingredienti sotto «Impasto», «Ripieno», «Per la salsa:» portano il nome della parte nella nota (prima sparivano) */
+  righe.forEach(function(x,k){ var n0=out.ingr.length; riga(x,k); if(parte) out.ingr.slice(n0).forEach(function(g){ g.parte=parte; }); });
+  if(resaTesto) out.passi.unshift(resaTesto);
   if(out.nome&&out.nome===out.nome.toUpperCase()&&/[A-Z]/.test(out.nome)) out.nome=out.nome.charAt(0)+out.nome.slice(1).toLowerCase();
   out.ocr=ocr;
   out.portata=portataDaNome(out.nome); out.tempo=tempoDaPassi(out.passi);
@@ -3779,6 +3791,8 @@ function impNormalizza(righe){ var out=[], i=0;
     var m=null;
     blocco.forEach(function(b,k){ var celle=b.t.split('\t'), mm=!m?impMappa(celle):null;
       if(mm){ m=mm; out.push({t:'Ingredienti',src:i0+k});
+        /* versione 10.1: le colonne lasciate fuori (prezzi, costi, lordo) si dicono, come le righe */
+        var via=celle.filter(function(c,j){ return mm.via[j]&&String(c||'').trim(); }).map(function(c){ return String(c).trim(); }); if(via.length) out.push({t:'Colonne non importate: '+via.join(', '),src:i0+k});
         /* una seconda riga d'intestazione con le unità: «(g)», «kg» */
         var dopo=blocco[k+1]&&blocco[k+1].t.split('\t'); if(dopo&&dopo.every(function(x){ x=String(x).trim().replace(/^\(|\)$/g,''); return !x||impUnita(x)||/^(chf|fr\.?|%)$/i.test(x); })&&dopo.some(function(x){return impUnita(String(x).trim().replace(/^\(|\)$/g,''));})){ var uu=String(dopo[m.q]||'').trim().replace(/^\(|\)$/g,''); if(impUnita(uu)&&!m.uq) m.uq=uu; b._salta=true; blocco[k+1]._salta=true; }
         return; }
@@ -3945,12 +3959,15 @@ function impStato(){ var I0=S.imp, vere=ricetteVere(), out=[], titoli=Object.cre
   return out; }
 /* quantità che possono essere sbagliate: lette da una foto, pezzi con i decimali o tantissimi, numeri senza unità, nomi con cifre */
 function impStrane(o,v){ var out=[], u=S.imp&&v?S.imp.unita[v.fonte]:null;
-  if(v&&!u&&(v.righe||[]).some(function(r){return r.senzaU;})) out.push('quantità senza unità');
-  if(o.ocr&&o.ocr.length) out.push(o.ocr[0].slice(0,30));
+  /* versione 10.1: se lo chef ha cambiato il testo, contano solo le righe senza unità che ci sono ancora */
+  var vive=v&&v.toccato?String(v.st.testo||'').split(/\r?\n/).map(function(t){return t.trim();}):null;
+  if(v&&!u&&(v.righe||[]).some(function(r){return r.senzaU&&(!vive||vive.indexOf(String(r.t).trim())>=0);})) out.push('quantità senza unità');
+  if(o.ocr&&o.ocr.length) out.push('«'+o.ocr[0].slice(0,30)+'», letto «'+impOcr(o.ocr[0]).slice(0,30)+'»');
   o.ingr.forEach(function(i){ var n=String(i.nome||''), r=String(i.riga||'');
-    if(i.u==='pz'&&i.q!=null&&(!Number.isInteger(i.q)||i.q>=50)) out.push(n+' '+fmt(i.q)+' pz');
+    var nn=n.replace(/\d+(?:[.,]\d+)?\s*%|\d+\s*mesi\b|\b(?:tipo|n\.?|nr\.?|numero)\s*\d+/gi,'');
+    if(i.u==='pz'&&i.q!=null&&(!Number.isInteger(i.q)&&!(i.q<10&&Number.isInteger(i.q*4))||i.q>=50)) out.push(n+' '+fmt(i.q)+' pz');
     else if(i.u==='pz'&&i.q!=null&&i.q>=10&&/^\D.*\s\d+$/.test(r)&&unitaTipica(n)!=='pz'&&!u) out.push(n+' '+fmt(i.q));
-    else if(/\d/.test(n)&&!/\b(00|0)\b/.test(n)||/^[^a-zà-ÿ]/i.test(n)) out.push(n); });
+    else if(/\d/.test(nn)&&!/\b(00|0)\b/.test(nn)||/^[^a-zà-ÿ]/i.test(n)) out.push(n); });
   return unici(out); }
 /* gli ingredienti da dire una volta sola: nuovi (tipo e allergeni) e carne o pesce senza provenienza */
 var impGiro=0;
@@ -3970,7 +3987,7 @@ function impSenzaUnita(stato){ var I0=S.imp, conta=Object.create(null), fuori=Ob
 /* da un pezzo di testo a ricetta: le stesse regole dell'incolla (versione 8-9) */
 function impBozza(s,id,mappaId,perId){ var o=s.o, nome=String(o.nome||'').trim();
   if(nome&&nome===nome.toUpperCase()&&/[A-Z]/.test(nome)) nome=nome.charAt(0)+nome.slice(1).toLowerCase();
-  var ingr=o.ingr.map(function(i,k){ var x=I(i.nome,i.q,i.u); if(i.nota) x.nota=i.nota; if(i.prov) x.prov=i.prov;
+  var ingr=o.ingr.map(function(i,k){ var x=I(i.nome,i.q,i.u); if(i.nota) x.nota=i.nota; if(i.prov) x.prov=i.prov; if(i.parte) x.parte=i.parte;
     var bv=s.basi[k], sb=bv&&perId?perId[bv.id]:null; if(sb&&sb.doppia&&mappaId[sb.doppia.id]) bv=sb.doppia;
     if(bv&&mappaId[bv.id]){ x.base=mappaId[bv.id]; }
     else if(sb&&sb.gia){ x.base=sb.gia.id; x.nome=sb.gia.nome; }
@@ -3979,7 +3996,7 @@ function impBozza(s,id,mappaId,perId){ var o=s.o, nome=String(o.nome||'').trim()
     return x; });
   var r={id:id,nome:nome,portata:s.portata,stagione:'Tutto l’anno',porzioni:Math.min(999,s.porz),tempo:o.tempo||'',condivisa:S.ruolo==='tutti',usi:0,frase:'',ingr:ingr.length?ingr:[I('',null,'g')],passi:o.passi.length?o.passi.slice():['']};
   if(o.resa) r.resa=o.resa.tipo;
-  if(!s.v.visto) r.importata=true;
+  r.importata=true;
   return r; }
 function impImporta(){ var I0=S.imp; if(!I0) return; var stato=impStato(), pronte=stato.filter(function(s){return s.pronta;}); if(!pronte.length) return;
   var base=Date.now(), mappaId=Object.create(null); pronte.forEach(function(s,n){ mappaId[s.v.id]='r'+base+'_'+n; });
@@ -4067,12 +4084,12 @@ function editorIncolla(pg,st,opz){ var v=opz.voce||null, I0=S.imp, kv=v?I0.voci.
     unaSola(!!ta.value.trim());
     ant.innerHTML=ta.value.trim()?'<small>Cosa abbiamo capito</small>'+
       (cand.length?'<div class="avviso domanda-incolla imp-forse"><p>Forse qui ci sono '+(cand.length+1)+' ricette'+': '+esc([o.nome].concat(cand.map(function(k){return String(grezze[k]||'').trim();})).slice(0,4).join(', '))+(cand.length>3?'…':'')+'.</p><div class="azioni"><button class="btn quieto piccolo" id="imp-sono">Sono '+(cand.length+1)+' ricette</button>'+'<button class="btn quieto piccolo" id="imp-una">È una ricetta sola</button>'+'</div></div>':'')+
-      (v&&st.qtaOk!==ta.value&&impStrane(o,v).length?'<div class="avviso domanda-incolla imp-strane"><p>Quantità da controllare: '+esc(impStrane(o,v).slice(0,4).join(', '))+'. Correggi nel testo, oppure:</p><div class="azioni"><button class="btn quieto piccolo" id="imp-qta-ok">Vanno bene</button></div></div>':'')+
+      (st.qtaOk!==ta.value&&impStrane(o,v).length?'<div class="avviso domanda-incolla imp-strane"><p>Quantità da controllare: '+esc(impStrane(o,v).slice(0,4).join(', '))+'. Correggi nel testo, oppure:</p><div class="azioni"><button class="btn quieto piccolo" id="imp-qta-ok">Vanno bene</button></div></div>':'')+
       '<label class="campo"><span>Titolo *</span><input id="titolo-incolla" value="'+esc(o.nome)+'" placeholder="Scrivi il titolo"></label>'+
       domande(o).map(function(x){ return '<div class="avviso domanda-incolla"><p>Nel testo c’è «'+esc(x)+'», ma non negli ingredienti. Manca? Così gli allergeni sono giusti.</p><div class="azioni"><button class="btn quieto piccolo" data-agg-ingr="'+esc(x)+'">Aggiungilo</button><button class="btn quieto piccolo" data-no-ingr="'+esc(x)+'">No, va bene</button></div></div>'; }).join('')+
       '<div class="testa-gruppo"><small>Ingredienti ('+o.ingr.length+')</small><button class="link" id="correggi-incolla" aria-pressed="'+st.correggo+'">'+(st.correggo?'Fine correzioni':'Correggi')+'</button></div>'+(!st.correggo?'<ul class="ingr">'+o.ingr.map(function(i){return '<li><span>'+esc(i.nome)+(notaIngr(i)?' <small>('+esc(notaIngr(i))+')</small>':'')+'</span><span class="q">'+(i.u==='q.b.'?'q.b.':fmt(i.q)+' '+i.u)+'</span></li>';}).join('')+'</ul>':'<ul class="ingr correggi">'+o.ingr.map(function(i){ var k=esc(piega(i.riga||i.nome)); return '<li><input class="inp" data-ing-nome="'+k+'" value="'+esc(i.nome)+'" aria-label="Nome dell’ingrediente"><span class="q">'+(i.u==='q.b.'?'q.b.':fmt(i.q)+' '+i.u)+'</span><span class="azioni-riga"><button class="link" data-ing-passo="'+k+'">È un passaggio</button><button class="link" data-ing-togli="'+k+'">Togli</button></span></li>';}).join('')+'</ul>')+
       '<label class="campo"><span>'+(o.resa&&o.resa.tipo==='litri'||!o.resa&&st.portata==='Basi'?'Resa in litri *':o.resa&&o.resa.tipo==='pezzi'?'Pezzi *':'Porzioni *')+'</span><input class="inp" id="porz-incolla" inputmode="numeric" value="'+esc(st.porzScritte!=null?st.porzScritte:(o.porzioni||(o.resa?String(o.resa.n).replace('.',','):'')||(v&&S.imp.porzTutte&&st.portata!=='Basi'?S.imp.porzTutte:'')))+'" placeholder="'+(o.resa&&o.resa.tipo==='litri'?'Quanti litri?':'Per quante persone?')+'"></label>'+'<small>Passaggi ('+o.passi.length+')</small><ol class="passi'+(st.correggo?' correggi':'')+'">'+o.passi.map(function(p){return '<li><span>'+esc(p)+'</span>'+(st.correggo&&p.length<70?'<button class="link" data-passo-ingr="'+esc(piega(p))+'">È un ingrediente</button>':'')+'</li>';}).join('')+'</ol>'+
-      (o.fuori&&o.fuori.length?'<p class="auto-nota imp-fuori">Righe lasciate fuori: '+esc(o.fuori.slice(0,8).join(' · '))+(o.fuori.length>8?' e altre '+(o.fuori.length-8):'')+'.</p>':'')
+      (o.fuori&&o.fuori.length?'<p class="auto-nota imp-fuori">Lasciato fuori: '+esc(o.fuori.slice(0,8).map(function(f){ return f.replace(/^Colonne non importate: /,'colonne '); }).join(' · '))+(o.fuori.length>8?' e altre '+(o.fuori.length-8):'')+'.</p>':'')
       :'<small>Qui vedi la ricetta divisa, mentre incolli. Anche più ricette insieme.</small>';
     var ti=$('#titolo-incolla'); if(ti) ti.oninput=function(){st.titolo=ti.value;aggiornaCrea(o);};
     var ridisegna=function(sel){ mostra(); var x=sel&&$(sel); if(x) x.focus(); else ta.focus(); };
@@ -4098,9 +4115,9 @@ function editorIncolla(pg,st,opz){ var v=opz.voce||null, I0=S.imp, kv=v?I0.voci.
     $('#imp-dividi-no',ant).onclick=function(){ st.dividi=false; st.scelte=null; mostra(); var d=$('#imp-dividi'); if(d) d.focus(); }; };
   var porzioniOk=function(){ var o=leggi(), x=st.porzScritte!=null?parseFloat(String(st.porzScritte).replace(',','.')):(o.porzioni||(o.resa?o.resa.n:0)||(v&&st.portata!=='Basi'?S.imp.porzTutte:0)); return x>0?x:0; };
   var aggiornaCrea=function(o){ var pi=$('#porz-incolla'); if(pi){ pi.oninput=function(){st.porzScritte=pi.value;controllaCrea();}; } controllaCrea(); };
-  var controllaCrea=function(){ var o=leggi(), nome=st.titolo!=null?st.titolo:o.nome, dom=domande(o), b=$('#crea-incolla'), m=$('#manca-incolla'), multi=!v&&(pezzi().length>1||!st.unaSola&&impCandidati(impRigheTesto(ta.value)).length>0);
-    if(b) b.disabled=multi||!(ta.value.trim()&&String(nome).trim()&&st.portata&&porzioniOk()&&!dom.length);
-    if(m) m.textContent=!ta.value.trim()||st.dividi?'':multi?(pezzi().length>1?'':'Rispondi sopra: una ricetta o più?'):!String(nome).trim()?'Manca il titolo.':!porzioniOk()?(o.resa&&o.resa.tipo==='litri'?'Scrivi quanti litri rende.':'Scrivi per quante porzioni.'):!st.portata&&!v?'Scegli la portata.':dom.length?'Rispondi: c’è «'+dom[0]+'» nel testo.':''; };
+  var controllaCrea=function(){ var o=leggi(), nome=st.titolo!=null?st.titolo:o.nome, dom=domande(o), b=$('#crea-incolla'), m=$('#manca-incolla'), multi=!v&&(pezzi().length>1||!st.unaSola&&impCandidati(impRigheTesto(ta.value)).length>0), strane=!v&&st.qtaOk!==ta.value&&impStrane(o,null).length>0;
+    if(b) b.disabled=multi||strane||!(ta.value.trim()&&String(nome).trim()&&st.portata&&porzioniOk()&&!dom.length);
+    if(m) m.textContent=!ta.value.trim()||st.dividi?'':multi?(pezzi().length>1?'':'Rispondi sopra: una ricetta o più?'):!String(nome).trim()?'Manca il titolo.':!porzioniOk()?(o.resa&&o.resa.tipo==='litri'?'Scrivi quanti litri rende.':'Scrivi per quante porzioni.'):!st.portata&&!v?'Scegli la portata.':dom.length?'Rispondi: c’è «'+dom[0]+'» nel testo.':strane?'Controlla le quantità segnate sopra.':''; };
   $$('[data-pi]',pg).forEach(function(b){b.onclick=function(){st.portata=b.dataset.pi;st.portataScelta=true;$$('[data-pi]',pg).forEach(function(x){x.setAttribute('aria-pressed',String(x===b));});var nota=$('#portata-proposta');if(nota)nota.textContent='';mostra();};});
   ta.oninput=function(){ if(v) v.toccato=true; mostra(); }; mostra();
   /* i file trascinati sul campo o sulla pagina */
@@ -4118,10 +4135,14 @@ function editorIncolla(pg,st,opz){ var v=opz.voce||null, I0=S.imp, kv=v?I0.voci.
       o.ingr.forEach(function(i){var b=S.ricette.filter(function(x){return x.portata==='Basi'&&!x.esempio&&chiave(x.nome)===chiave(i.nome);})[0]||S.ricette.filter(function(x){return String(x.nome||'').trim()&&!x.esempio&&chiave(x.nome)===chiave(i.nome);})[0]||S.ricette.filter(function(x){return x.portata==='Basi'&&chiave(x.nome)===chiave(i.nome);})[0]; if(b){i.base=b.id;i.nome=b.nome;}});
       if(!o.nome) return;
       var nr={id:id,nome:o.nome,portata:st.portata,stagione:'Tutto l’anno',porzioni:porzioniOk()||4,tempo:o.tempo||'',condivisa:S.ruolo==='tutti',usi:0,frase:'',ingr:o.ingr.length?o.ingr:[I('',null,'g')],passi:o.passi.length?o.passi:['']};
-      if(o.resa) nr.resa=o.resa.tipo; S.ricette.unshift(nr);
+      if(o.resa) nr.resa=o.resa.tipo;
+      var uguale=ricetteVere().filter(function(x){ return firmaRicetta(x)===firmaRicetta(nr); })[0];
+      if(uguale){ S.sel=uguale.id; S.modo='leggi'; disegnaRicettario(); window.scrollTo(0,0); toast('C’è già una ricetta uguale: eccola.'); return; }
+      var nome0=nr.nome, rinom=false; if(S.ricette.some(function(x){ return chiave(x.nome)===chiave(nr.nome); })){ var nn=1, prova=nome0+' (importata)'; while(S.ricette.some(function(x){ return chiave(x.nome)===chiave(prova); })){ nn++; prova=nome0+' (importata '+nn+')'; } nr.nome=prova; rinom=true; }
+      S.ricette.unshift(nr);
       /* se non manca niente si va subito alla ricetta finita; altrimenti alla modifica, con le domande aperte */
       var manca=analisi(ric(id)).mancano.length;
-      S.sel=id;S.modo=manca?'modifica':'leggi';disegnaRicettario();window.scrollTo(0,0);toast(manca?'Ricetta creata. Rispondi alle domande segnate.':'Ricetta creata.');
+      S.sel=id;S.modo=manca?'modifica':'leggi';disegnaRicettario();window.scrollTo(0,0);toast((rinom?'Creata come «'+nr.nome+'»: c’era già «'+nome0+'».':'Ricetta creata.')+(manca?' Rispondi alle domande segnate.':''));
       if(manca) setTimeout(function(){ var d=$('.domande button, .domande input'); if(d){ d.scrollIntoView({block:'center'}); d.focus({preventScroll:true}); } },0); };
   } else {
     $('#imp-fatto').onclick=function(){ impSalvaVoce(v,st); var pz=impPezziTesto(st.testo); if(pz.length>1){ impSostituisci(v,st.testo); return; } I0.vista='elenco'; disegnaRicettario(); window.scrollTo(0,0); };
@@ -4161,7 +4182,7 @@ function disegnaImportElenco(pg){ var I0=S.imp, stato=impStato(), gruppi=impGrup
   if(unaVolta){ h+='<section class="imp-una" aria-labelledby="imp-una-t"><h3 id="imp-una-t">Da dire una volta sola</h3><small class="auto-nota">Vale per tutte le ricette dell’elenco. Si può anche fare dopo, ricetta per ricetta.</small>';
     if(senzaPorz.length||I0.porzTutte){ var nomiP=senzaPorz.slice(0,3).map(function(s){return s.o.nome||'Ricetta senza titolo';}).join(', ')+(senzaPorz.length>3?' e altre '+(senzaPorz.length-3):'');
       h+='<label class="campo imp-porz"><span>'+(senzaPorz.length===1?'Per quante porzioni è «'+esc(nomiP)+'»?':senzaPorz.length?'Per quante porzioni sono le '+senzaPorz.length+' ricette senza porzioni ('+esc(nomiP)+')?':'Porzioni per le ricette senza porzioni')+'</span><input class="inp" id="imp-porz" inputmode="numeric" value="'+esc(I0.porzTutte||'')+'" placeholder="Per esempio 4"></label>'; }
-    Object.keys(senzaU).forEach(function(f,fi){ var es=[]; I0.voci.forEach(function(v){ if(v.fonte===f) v.righe.forEach(function(r){ if(r.senzaU&&es.length<3) es.push(r.nome+' '+r.q); }); });
+    Object.keys(senzaU).forEach(function(f,fi){ var es=[]; I0.voci.forEach(function(v){ if(v.fonte===f&&!v.toccato) v.righe.forEach(function(r){ if(r.senzaU&&es.length<3) es.push(r.nome+' '+r.q); }); });
       h+='<div class="campo"><span>In «'+esc(impTagliaNome(f))+'» '+(senzaU[f]===1?'1 quantità non ha':senzaU[f]+' quantità non hanno')+' l’unità (per esempio '+esc(es.join(', '))+'). Sono:</span><div class="filtri">'+['g','kg','dl','l','pz'].map(function(u){ return '<button class="chipf" data-imp-u="'+fi+'|'+u+'" aria-pressed="'+(I0.unita[f]===u)+'">'+u+'</button>'; }).join('')+'</div></div>'; });
     /* tanti ingredienti nuovi: i primi 5, gli altri a richiesta */
     var MAXG=5, mostraG=I0.tuttiGruppi?gruppi.length:Math.min(MAXG,gruppi.length);
@@ -4429,8 +4450,8 @@ function stampaRicette(lista,formato,libro,raccolta,porzioni){
 }
 /* versione 9: il ricettario come file (formato del prototipo). Dentro: ricette, basi, ingredienti, scelte della modalità cucina,
    risposte sugli allergeni degli ingredienti nuovi. Fuori: prezzi d'acquisto, costi, usi, menu (dati del locale). */
-var CAMPI_RICETTA=['id','nome','nomeDe','portata','stagione','porzioni','resa','tempo','frase','raccolte','conserva','passi','legami'];
-var CAMPI_INGR=['nome','q','u','prov','base','nota'];
+var CAMPI_RICETTA=['id','nome','nomeDe','portata','stagione','porzioni','resa','tempo','frase','raccolte','conserva','passi','legami','importata'];
+var CAMPI_INGR=['nome','q','u','prov','base','nota','parte'];
 function fileRicette(){ var lista=visibiliPerRuolo().filter(function(r){return String(r.nome||'').trim();});
   var ricette=lista.map(function(r){ var o={}; CAMPI_RICETTA.forEach(function(c){ if(r[c]!=null&&r[c]!=='') o[c]=clona(r[c]); });
     o.ingr=r.ingr.filter(function(i){return String(i.nome||'').trim();}).map(function(i){ var x={}; CAMPI_INGR.forEach(function(c){ if(i[c]!=null&&i[c]!=='') x[c]=clona(i[c]); });
@@ -4456,11 +4477,11 @@ function caricaFileRicette(testo){ var f; try{ f=JSON.parse(testo); }catch(e){ r
     var x=Object.assign({},x0,{ingr:x0.ingr.filter(function(i){return i&&typeof i==='object'&&typeof i.nome==='string';}),passi:Array.isArray(x0.passi)?x0.passi.filter(function(p){return typeof p==='string';}):[]});
     var uguale=S.ricette.concat(nuove).filter(function(r){return firmaRicetta(r)===firmaRicetta(x);})[0]; if(uguale){ mappa[x.id]=uguale.id; gia++; return; }
     var r={id:'f'+base+'_'+n,nome:String(x.nome).trim(),nomeDe:x.nomeDe||'',portata:PORTATE.concat(S.portateExtra).indexOf(x.portata)>=0?x.portata:'',stagione:STAGIONI.indexOf(x.stagione)>=0?x.stagione:'Tutto l’anno',porzioni:+x.porzioni>0&&+x.porzioni<=999?+x.porzioni:4,tempo:x.tempo||'',frase:x.frase||'',raccolte:Array.isArray(x.raccolte)?x.raccolte.slice():[],condivisa:false,usi:0,
-      ingr:x.ingr.map(function(i){ var uOk=UNITA_FILE.indexOf(i.u)>=0, o=I(String(i.nome||''),!uOk||i.q==null||typeof i.q==='boolean'||!isFinite(+i.q)||+i.q<0||+i.q>100000?null:+i.q,uOk?i.u:'g'); if(typeof i.prov==='string') o.prov=i.prov; if(typeof i.base==='string') o.base=i.base; if(i.nota&&typeof i.nota.testo==='string') o.nota={testo:i.nota.testo,q:i.nota.q};
+      ingr:x.ingr.map(function(i){ var uOk=UNITA_FILE.indexOf(i.u)>=0, o=I(String(i.nome||''),!uOk||i.q==null||typeof i.q==='boolean'||!isFinite(+i.q)||+i.q<0||+i.q>100000?null:+i.q,uOk?i.u:'g'); if(typeof i.prov==='string') o.prov=i.prov; if(typeof i.base==='string') o.base=i.base; if(i.nota&&typeof i.nota.testo==='string') o.nota={testo:i.nota.testo,q:i.nota.q}; if(typeof i.parte==='string'&&i.parte.length<=40) o.parte=i.parte;
         return o; }),
       passi:Array.isArray(x.passi)&&x.passi.length?x.passi.map(String):[''],legami:Array.isArray(x.legami)?x.legami.map(function(q){ return q&&Array.isArray(q.piu)&&Array.isArray(q.meno)?{piu:q.piu.filter(function(s){return typeof s==='string';}),meno:q.meno.filter(function(s){return typeof s==='string';})}:null; }):undefined};
     r.raccolte=r.raccolte.filter(function(s){return typeof s==='string';}); ['nomeDe','tempo','frase','portata','stagione'].forEach(function(c){ if(typeof r[c]!=='string') r[c]=c==='stagione'?'Tutto l’anno':''; });
-    if(x.resa==='litri'||x.resa==='pezzi') r.resa=x.resa; if(x.conserva!=null) r.conserva=x.conserva; if(!r.legami) delete r.legami;
+    if(x.resa==='litri'||x.resa==='pezzi') r.resa=x.resa; if(x.conserva!=null) r.conserva=x.conserva; if(!r.legami) delete r.legami; if(x.importata===true) r.importata=true;
     if(S.ricette.concat(nuove).some(function(o){return chiave(o.nome)===chiave(r.nome);})){ var base0=r.nome.replace(/\s*\(dal file(?: \d+)?\)\s*$/i,''), nn=1, prova0=base0+' (dal file)';
       while(S.ricette.concat(nuove).some(function(o){return chiave(o.nome)===chiave(prova0);})){ nn++; prova0=base0+' (dal file '+nn+')'; } r.nome=prova0; rinominate++; }
     mappa[x.id]=r.id; nuove.push(r); });
@@ -4944,7 +4965,7 @@ function stampaPreparare(k){ var pr=produzione(k), d=giorni().filter(function(x)
 /* ---------- etichette: A4 con 24 etichette 70 × 37 mm (3 × 8) ---------- */
 function testoEtichetta(p){ var r=ric(p.ric), a=analisi(r);
   return {nome:r.nome, q:qPronta(r,p.q), riga1:(p.tipo==='congelato'?'Congelato il ':p.tipo==='scongelato'?'Scongelato il ':'Prodotto il ')+dataPiena(p.fatto),
-    riga2:'Da consumare entro '+dataPiena(p.entro)+(p.oraEntro?' alle '+p.oraEntro:''), all:a.all.length?'Allergeni: '+a.all.join(', '):(a.mancano.length?'Allergeni: da completare':'Allergeni: nessuno dei 14'),
+    riga2:'Da consumare entro '+dataPiena(p.entro)+(p.oraEntro?' alle '+p.oraEntro:''), all:a.mancano.some(function(x){ return !/\(provenienza\)$/.test(x); })?'Allergeni: da completare':a.all.length?'Allergeni: '+a.all.join(', '):'Allergeni: nessuno dei 14',
     prov:a.prov.length?'Provenienza: '+provCorta(a.prov):'', chi:p.sigla||iniziali(p.chi)}; }
 /* «Manzo: Svizzera», «Gallina: Svizzera» → «manzo e gallina: Svizzera» (sull'etichetta lo spazio è poco) */
 function provCorta(l){ var per={}, ord=[]; l.forEach(function(x){ var m=String(x).match(/^\s*([^:(]+?)\s*[:(]\s*([^)]+?)\)?\s*$/); var cosa=m?m[1]:x, dove=m?m[2]:''; if(!per[dove]){ per[dove]=[]; ord.push(dove); } if(per[dove].indexOf(cosa)<0) per[dove].push(cosa); });
