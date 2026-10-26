@@ -5618,5 +5618,174 @@ $('#invito-chiudi').onclick=function(){ $('#invito').hidden=true; };
 $('#invito-vai').onclick=function(){ $('#invito').hidden=true; };
 (function(){ var p=window.print; window.print=function(){ var r=p.apply(window,arguments); invito(); return r; }; })();
 </script>
+<!-- 10.12: contatore delle statistiche (34-STATISTICHE.md) -->
+<script>window.RC_PAGINA='prova';</script>
+<script>
+/* Contatore RemyChef (34-STATISTICHE.md). Conta solo su remychef.ch, senza cookie e senza dati che identificano.
+   giro = codice a caso per la scheda (sessionStorage), sparisce quando la scheda si chiude; se la prova si apre in una scheda nuova,
+   il giro passa per 60 secondi in localStorage («rc-passa») e si cancella appena letto. «Non contarmi» = localStorage. */
+(function () {
+  var conta = function () {};
+  window.rcConta = conta;
+  try {
+    var PAG = window.RC_PAGINA === 'prova' ? 'prova' : 'landing';
+    var host = location.hostname;
+    if (host !== 'remychef.ch' && host !== 'www.remychef.ch') return;
+    var LS = null, SS = null;
+    try { LS = window.localStorage; } catch (e) {}
+    try { SS = window.sessionStorage; } catch (e) {}
+    var leggi = function (s, k) { try { return s ? s.getItem(k) : null; } catch (e) { return null; } };
+    var scrivi = function (s, k, v) { try { if (s) s.setItem(k, v); } catch (e) {} };
+    var togli = function (s, k) { try { if (s) s.removeItem(k); } catch (e) {} };
+    var spento = false;
+    var q = location.search || '';
+    if (/[?&]noncontare(=|&|$)/.test(q)) scrivi(LS, 'rc-non-contare', '1');
+    if (/[?&]prova-claude(=|&|$)/.test(q)) scrivi(SS, 'rc-prova', '1');
+    window.rcNonContare = function () { spento = true; scrivi(LS, 'rc-non-contare', '1'); };
+    window.rcNonContato = function () { return spento || leggi(LS, 'rc-non-contare') === '1'; };
+    if (window.rcNonContato()) return;
+    if (navigator.webdriver && !window.RC_TEST) return;
+    /* senza sessionStorage che funziona davvero non si può evitare il doppio conteggio: meglio non contare */
+    try { SS.setItem('rc-x', '1'); if (SS.getItem('rc-x') !== '1') return; SS.removeItem('rc-x'); } catch (e) { return; }
+
+    var INDIRIZZO = 'https://sjsamldxbbvuodcphxop.supabase.co/rest/v1/eventi', CHIAVE = 'sb_publishable_J48n_Qj7a3Hc2vHp1ctWow_jMjmCP3B';
+    var prova = leggi(SS, 'rc-prova') === '1';
+    var giro = leggi(SS, 'rc-giro');
+    var fattiOra = function () { try { return JSON.parse(leggi(SS, 'rc-fatti') || '{}') || {}; } catch (e) { return {}; } };
+    /* prova aperta in una scheda nuova: prende il giro passato dalla landing (se ha meno di 60 s) */
+    var passa = leggi(LS, 'rc-passa');
+    if (passa) {
+      var pz = passa.split('.');
+      if (PAG === 'prova' && !giro && pz.length === 3 && /^[a-z0-9]{12}$/.test(pz[0]) && Date.now() - (+pz[2]) < 60000) {
+        giro = pz[0]; scrivi(SS, 'rc-giro', giro); scrivi(SS, 'rc-fatti', '{}'); if (pz[1] === '1') { prova = true; scrivi(SS, 'rc-prova', '1'); }
+        togli(LS, 'rc-passa');
+      } else if (PAG === 'prova' || !(Date.now() - (+pz[2]) < 60000)) togli(LS, 'rc-passa');
+    }
+    window.rcPassaGiro = function () {
+      if (!giro || spento) return;
+      var v = giro + '.' + (prova ? '1' : '0') + '.' + Date.now(); scrivi(LS, 'rc-passa', v);
+      setTimeout(function () { if (leggi(LS, 'rc-passa') === v) togli(LS, 'rc-passa'); }, 60000); /* se nessuna prova lo prende, si cancella dopo un minuto */
+    };
+
+    var dito = window.matchMedia && matchMedia('(pointer: coarse)').matches;
+    var lato = Math.min(screen.width || 0, screen.height || 0);
+    var DISP = dito ? (lato < 600 ? 'telefono' : 'tablet') : 'computer';
+
+    var manda = function (evento, dettaglio) {
+      try {
+        var d = dettaglio == null ? null : String(dettaglio).replace(/[^A-Za-z0-9._:-]/g, '').slice(0, 60) || null;
+        fetch(INDIRIZZO, { method: 'POST', keepalive: true, headers: { 'apikey': CHIAVE, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+          body: JSON.stringify({ pagina: PAG, evento: evento, dettaglio: d, giro: giro, dispositivo: DISP, prova: prova }) })
+          .catch(function () {});
+      } catch (e) {}
+    };
+    /* unico = una volta per giro (la chiave tiene pagina, evento e dettaglio) */
+    conta = function (evento, dettaglio, unico) {
+      try {
+        if (!giro || window.rcNonContato()) return;
+        if (unico) { var f = fattiOra(), k = PAG + ':' + evento + ':' + (dettaglio || ''); if (f[k]) return; f[k] = 1; scrivi(SS, 'rc-fatti', JSON.stringify(f)); }
+        manda(evento, dettaglio);
+      } catch (e) {}
+    };
+    window.rcConta = conta;
+
+    var nuovoGiro = function () {
+      var c = '', a = 'abcdefghijklmnopqrstuvwxyz0123456789';
+      try { var r = new Uint8Array(12); crypto.getRandomValues(r); for (var i = 0; i < 12; i++) c += a[r[i] % 36]; }
+      catch (e) { for (var j = 0; j < 12; j++) c += a[Math.floor(Math.random() * 36)]; }
+      giro = c; scrivi(SS, 'rc-giro', c); scrivi(SS, 'rc-fatti', '{}');
+    };
+    var provenienza = function () {
+      try {
+        if (!document.referrer) return 'diretto';
+        var h = new URL(document.referrer).hostname.replace(/^www\./, '');
+        return h === 'remychef.ch' ? 'remychef' : h;
+      } catch (e) { return 'diretto'; }
+    };
+
+    /* tempo visibile, accumulato nel giro: un «tempo» ogni 30 s visibili, fino a 20 minuti */
+    var chiaveSec = 'rc-sec-' + PAG, sec = +(leggi(SS, chiaveSec) || 0) || 0;
+    var orologio = function () {
+      setInterval(function () {
+        try {
+          if (document.visibilityState !== 'visible' || !giro || sec >= 1200 || window.rcNonContato()) return;
+          sec++; if (sec % 5 === 0) scrivi(SS, chiaveSec, String(sec));
+          if (sec % 30 === 0) conta('tempo', String(sec));
+        } catch (e) {}
+      }, 1000);
+    };
+
+    var avvia = function (inizio) {
+      if (document.prerendering) { document.addEventListener('prerenderingchange', function () { avvia(inizio); }, { once: true }); return; }
+      inizio();
+    };
+
+    if (PAG === 'landing') {
+      avvia(function () {
+        if (giro) { conta('ritorno'); orologio(); return; }
+        /* visita vera solo dopo un segno umano: rotella, tocco, clic, tasto, oppure 8 s con la pagina visibile (non lo scroll: lo fa anche il browser da solo) */
+        var fatto = false, visibile = 0, tic = null;
+        var via = function (ev) {
+          if (fatto) return;
+          if (ev && ev.target && ev.target.closest && ev.target.closest('#non-contarmi')) return;
+          fatto = true;
+          ['wheel', 'pointerdown', 'keydown', 'touchstart'].forEach(function (t) { window.removeEventListener(t, via, true); });
+          if (tic) clearInterval(tic);
+          nuovoGiro(); conta('visita', provenienza()); orologio();
+          if (window.rcDopoVisita) window.rcDopoVisita();
+        };
+        ['wheel', 'pointerdown', 'keydown', 'touchstart'].forEach(function (t) { window.addEventListener(t, via, { capture: true, passive: true }); });
+        tic = setInterval(function () { if (document.visibilityState === 'visible' && ++visibile >= 8) via(); }, 1000);
+      });
+      window.addEventListener('pageshow', function (e) { if (e.persisted) conta('ritorno'); });
+    } else {
+      /* la prova conta solo dentro un giro nato nella landing (chi ha avuto la nota) */
+      if (!giro) return;
+      avvia(function () {
+        if (fattiOra()['prova:apertura:']) conta('riapertura'); else conta('apertura', null, true);
+        orologio();
+      });
+      window.addEventListener('pageshow', function (e) { if (e.persisted) conta('riapertura'); });
+    }
+  } catch (e) {}
+})();
+</script>
+<script>
+/* Agganci del prototipo al contatore (34-STATISTICHE.md): ruolo, vista e la prima volta di ogni funzione, una volta per giro.
+   Senza internet o fuori da remychef.ch rcConta non fa niente: il prototipo funziona uguale. */
+(function () {
+  try {
+    var c = function (e, d) { try { window.rcConta(e, d, true); } catch (x) {} };
+    var AZIONI = { apriCucina: 'cucina', avviaTimer: 'timer', avviaAscolto: 'voce', pubblica: 'pubblica', apriQrTavoli: 'qr_tavoli',
+      stampaQrTavoli: 'stampa_qr', stampaMenu: 'stampa_fatta', testoSocial: 'social_testo', esportaLibro: 'libro', apriImporta: 'importa',
+      nuovaRicetta: 'nuova_ricetta', apriSpesa: 'spesa', apriPreparare: 'preparare', apriTemperature: 'temperature', apriPulizie: 'pulizie',
+      apriRegistro: 'registro', apriPrezzi: 'prezzi', apriMerce: 'merce', apriCopia: 'copia_menu' };
+    var avvolgi = function (nome, quale) {
+      var f = window[nome]; if (typeof f !== 'function') return;
+      window[nome] = function () { try { c('azione', typeof quale === 'function' ? quale(arguments) : quale); } catch (x) {} return f.apply(this, arguments); };
+    };
+    Object.keys(AZIONI).forEach(function (n) { avvolgi(n, AZIONI[n]); });
+    /* «Stampa» e «Per i social» aprono la stessa finestra: il terzo argomento dice quale */
+    avvolgi('apriStampa', function (a) { return a[2] === 'immagine' ? 'social' : 'stampa'; });
+    var prima = window.disegna;
+    if (typeof prima === 'function') {
+      var ruolo = null, vista = null;
+      window.disegna = function () {
+        var r = prima.apply(this, arguments);
+        try {
+          if (typeof S !== 'undefined' && S) {
+            if (S.ruolo && S.ruolo !== ruolo) c('ruolo', S.ruolo);
+            if (S.ruolo && S.vista && (S.vista !== vista || S.ruolo !== ruolo)) c('vista', S.vista);
+            ruolo = S.ruolo; vista = S.vista;
+          }
+        } catch (x) {}
+        return r;
+      };
+      /* i bottoni disegnati prima degli agganci tengono le funzioni vecchie: si ridisegna l'entrata una volta */
+      window.disegna();
+    }
+  } catch (e) {}
+})();
+</script>
 </body>
 </html>
