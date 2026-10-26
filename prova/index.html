@@ -36,7 +36,7 @@
   --piatto-cibo:#C9772E; --piatto-cibo-2:#E7B66E; --piatto-erba:#6E8B3D; --piatto-orlo:#EFE8DF;
   --interlinea-titoli:1.15; --interlinea-righe:1.3;
   --bordo-fine:1px; --bordo:2px; --fuoco:3px; --tondo:999px;
-  --larghezza-lato:220px; --larghezza-lato-stretta:104px; --larghezza-elenco:380px; --larghezza-elenco-media:320px;
+  --larghezza-lato:220px; --larghezza-lato-stretta:104px; --larghezza-elenco:380px; --larghezza-elenco-larga:440px; --larghezza-elenco-media:320px;
   --larghezza-pagina:1080px; --larghezza-finestra:640px; --larghezza-avviso:560px; --larghezza-menu:240px; --larghezza-modulo:760px; --stile-min:200px; --larghezza-entrata:1040px; --passo-cerchio:32px;
   --piatto-grande:168px; --piatto-medio:120px; --piatto-piccolo:88px; --piatto-riga:52px; --anello:2px; --anello-stacco:2px; --larghezza-invito:360px; --altezza-demo:calc(var(--bersaglio) + 2 * var(--spazio-1));
   --marchio:36px; --icona:22px; --icona-piccola:20px; --barra-sotto:64px;
@@ -205,6 +205,7 @@ main{min-width:0}
 
 /* ---------- ricettario ---------- */
 .ricettario{display:grid;grid-template-columns:var(--larghezza-elenco) 1fr;min-height:100vh}
+@media (min-width:1366px){.ricettario{grid-template-columns:var(--larghezza-elenco-larga) 1fr}}
 .elenco{border-right:var(--bordo-fine) solid var(--colore-linea);padding:var(--spazio-4) var(--spazio-3);display:flex;flex-direction:column;gap:var(--spazio-3);min-width:0}
 .elenco h2{font-size:var(--titolo-1);line-height:var(--interlinea-titoli)}
 .conta{color:var(--colore-testo-secondario);font-size:var(--testo-piccolo)}
@@ -222,6 +223,35 @@ main{min-width:0}
 .oggi-menu .filtri.da-sx{-webkit-mask-image:linear-gradient(90deg,transparent,var(--colore-testo) 15%);mask-image:linear-gradient(90deg,transparent,var(--colore-testo) 15%)}
 .oggi-menu .filtri.da-sx.continua{-webkit-mask-image:linear-gradient(90deg,transparent,var(--colore-testo) 15%,var(--colore-testo) 85%,transparent);mask-image:linear-gradient(90deg,transparent,var(--colore-testo) 15%,var(--colore-testo) 85%,transparent)}
 .filtri.portate.continua,.oggi-menu .filtri.continua:not(.da-sx){-webkit-mask-image:linear-gradient(90deg,var(--colore-testo) 85%,transparent);mask-image:linear-gradient(90deg,var(--colore-testo) 85%,transparent)}
+/* 10.11: frecce sulle strisce che scorrono di lato, solo con il mouse (sul telefono si scorre col dito, come prima) */
+.striscia{position:relative;min-width:0}
+.freccia{display:none}
+@media (pointer:fine){
+.freccia{flex:none;width:var(--bersaglio);height:var(--bersaglio);display:none;align-items:center;justify-content:center;padding:0;border-radius:var(--tondo);border:var(--bordo) solid var(--colore-bordo);background:transparent;color:var(--colore-testo)}
+.freccia:hover:not(:disabled){background:var(--colore-chip)}
+.freccia:disabled{border-color:var(--colore-linea);color:var(--colore-linea);cursor:default}
+.freccia svg{width:var(--icona);height:var(--icona)}
+.striscia>.filtri,.striscia>.giorni-striscia{scroll-padding-inline:calc(var(--bersaglio) + var(--spazio-5))}
+.striscia>.filtri.portate{scroll-padding-inline:calc(var(--spazio-3) + var(--bersaglio) + var(--spazio-5))}
+.freccia{position:absolute;top:0;z-index:1;background:var(--colore-sfondo)}
+.freccia.sx{left:0}
+.freccia.dx{right:0}
+/* un nome lungo non finisce sotto la freccia: si ferma prima, con «…», intero al passaggio del mouse */
+.striscia>.filtri:not(.portate) .chipf{max-width:calc(100% - var(--bersaglio) - var(--spazio-5));overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* un piatto in mezzo alla fila ha una freccia per lato */
+.striscia>.filtri:not(.portate) .chipf:not(:first-child):not(:last-child){max-width:calc(100% - 2 * (var(--bersaglio) + var(--spazio-5)))}
+.striscia.alta .freccia{top:calc(50% - var(--bersaglio) / 2)}
+.striscia.a-sx .freccia.sx,.striscia.a-dx .freccia.dx{display:flex}
+.striscia>.filtri:not(.portate).continua:not(.da-sx){-webkit-mask-image:linear-gradient(90deg,var(--colore-testo) calc(100% - calc(var(--bersaglio) + var(--spazio-5))),transparent calc(100% - var(--bersaglio)));mask-image:linear-gradient(90deg,var(--colore-testo) calc(100% - calc(var(--bersaglio) + var(--spazio-5))),transparent calc(100% - var(--bersaglio)))}
+.striscia>.filtri:not(.portate).da-sx:not(.continua){-webkit-mask-image:linear-gradient(90deg,transparent var(--bersaglio),var(--colore-testo) calc(var(--bersaglio) + var(--spazio-5)));mask-image:linear-gradient(90deg,transparent var(--bersaglio),var(--colore-testo) calc(var(--bersaglio) + var(--spazio-5)))}
+.striscia>.filtri:not(.portate).da-sx.continua{-webkit-mask-image:linear-gradient(90deg,transparent var(--bersaglio),var(--colore-testo) calc(var(--bersaglio) + var(--spazio-5)),var(--colore-testo) calc(100% - calc(var(--bersaglio) + var(--spazio-5))),transparent calc(100% - var(--bersaglio)));mask-image:linear-gradient(90deg,transparent var(--bersaglio),var(--colore-testo) calc(var(--bersaglio) + var(--spazio-5)),var(--colore-testo) calc(100% - calc(var(--bersaglio) + var(--spazio-5))),transparent calc(100% - var(--bersaglio)))}
+.striscia>.filtri.portate.continua:not(.da-sx){-webkit-mask-image:linear-gradient(90deg,var(--colore-testo) calc(100% - calc(var(--spazio-3) + var(--bersaglio) + var(--spazio-5))),transparent calc(100% - calc(var(--spazio-3) + var(--bersaglio))));mask-image:linear-gradient(90deg,var(--colore-testo) calc(100% - calc(var(--spazio-3) + var(--bersaglio) + var(--spazio-5))),transparent calc(100% - calc(var(--spazio-3) + var(--bersaglio))))}
+.striscia>.filtri.portate.da-sx:not(.continua){-webkit-mask-image:linear-gradient(90deg,transparent calc(var(--spazio-3) + var(--bersaglio)),var(--colore-testo) calc(var(--spazio-3) + var(--bersaglio) + var(--spazio-5)));mask-image:linear-gradient(90deg,transparent calc(var(--spazio-3) + var(--bersaglio)),var(--colore-testo) calc(var(--spazio-3) + var(--bersaglio) + var(--spazio-5)))}
+.striscia>.filtri.portate.da-sx.continua{-webkit-mask-image:linear-gradient(90deg,transparent calc(var(--spazio-3) + var(--bersaglio)),var(--colore-testo) calc(var(--spazio-3) + var(--bersaglio) + var(--spazio-5)),var(--colore-testo) calc(100% - calc(var(--spazio-3) + var(--bersaglio) + var(--spazio-5))),transparent calc(100% - calc(var(--spazio-3) + var(--bersaglio))));mask-image:linear-gradient(90deg,transparent calc(var(--spazio-3) + var(--bersaglio)),var(--colore-testo) calc(var(--spazio-3) + var(--bersaglio) + var(--spazio-5)),var(--colore-testo) calc(100% - calc(var(--spazio-3) + var(--bersaglio) + var(--spazio-5))),transparent calc(100% - calc(var(--spazio-3) + var(--bersaglio))))}
+.striscia>.giorni-striscia.continua:not(.da-sx){-webkit-mask-image:linear-gradient(90deg,var(--colore-testo) calc(100% - calc(var(--bersaglio) + var(--spazio-5))),transparent calc(100% - var(--bersaglio)));mask-image:linear-gradient(90deg,var(--colore-testo) calc(100% - calc(var(--bersaglio) + var(--spazio-5))),transparent calc(100% - var(--bersaglio)))}
+.striscia>.giorni-striscia.da-sx:not(.continua){-webkit-mask-image:linear-gradient(90deg,transparent var(--bersaglio),var(--colore-testo) calc(var(--bersaglio) + var(--spazio-5)));mask-image:linear-gradient(90deg,transparent var(--bersaglio),var(--colore-testo) calc(var(--bersaglio) + var(--spazio-5)))}
+.striscia>.giorni-striscia.da-sx.continua{-webkit-mask-image:linear-gradient(90deg,transparent var(--bersaglio),var(--colore-testo) calc(var(--bersaglio) + var(--spazio-5)),var(--colore-testo) calc(100% - calc(var(--bersaglio) + var(--spazio-5))),transparent calc(100% - var(--bersaglio)));mask-image:linear-gradient(90deg,transparent var(--bersaglio),var(--colore-testo) calc(var(--bersaglio) + var(--spazio-5)),var(--colore-testo) calc(100% - calc(var(--bersaglio) + var(--spazio-5))),transparent calc(100% - var(--bersaglio)))}
+}
 .filtri.attivi .chipf{display:inline-flex;align-items:center;gap:var(--spazio-2)}
 .chipf.scelto{background:var(--colore-chip);border-color:var(--colore-chip)}
 .chipf svg{width:var(--icona-piccola);height:var(--icona-piccola)}
@@ -1510,7 +1540,7 @@ var S={ruolo:null,vista:'ricettario',sel:null,modo:'leggi',q:'',portata:'Tutte',
        f:{stagione:null,tempo:null,dieta:null,senza:[],raccolta:null,stato:null},ordina:'az',latoChiuso:false,porz:{},menu:{},cucina:null,conferme:{},
        ricette:[],diz:{},imp:null};
 function clona(o){return JSON.parse(JSON.stringify(o));}
-function nuovoStato(vuoto){
+function nuovoStato(vuoto){ SCORRI={}; /* 10.11 */
   S.ricette=vuoto?[]:clona(RICETTE_ESEMPIO); S.persona=vuoto?'':'Lia Prova';
   S.diz=Object.create(null); for(var k in DIZ) S.diz[k]={tipo:DIZ[k][0],all:DIZ[k][1].slice(),proposta:true};
   S.sel=null; S.modo='leggi'; S.porz={}; S.conferme={}; S.spunteCucina={}; S.previste={}; S.chi=null;
@@ -1697,7 +1727,7 @@ var ICONE={social:'<svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" st
  foglia:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 19c0-9 5-14 15-14 0 10-5 15-14 15"/><path d="M5 19l8-8"/></svg>',
  occhio:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
  qr:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h2v2h-2zM18 18h2v2h-2zM14 18h2M18 14h2"/></svg>',
- x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+ x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>',sx:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>',dx:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>',
  lucchetto:'<svg class="lucchetto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" role="img" aria-label="Privata"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>'
 };
 
@@ -1830,6 +1860,36 @@ function chipsAttivi(){var f=S.f,c=[];
 function togliChip(k){ if(k.indexOf('senza:')===0){var x=k.slice(6);S.f.senza=S.f.senza.filter(function(y){return y!==x;});} else S.f[k]=null; }
 /* le ricette nel menu di oggi, visibili a chi guarda */
 function ricetteDiOggi(){ var k=chiaveGiorno(new Date()), ids=[]; if(chiuso(k)) return ids; serviziDi(k).forEach(function(sv){ var m=menuDi(k,sv); if(m) m.piatti.forEach(function(p){ [p.ric,p.alt].forEach(function(id){ var r=id&&ric(id); if(r&&(eChef()||r.condivisa)&&ids.indexOf(id)<0) ids.push(id); }); }); }); return ids; }
+/* 10.11: strisce che scorrono di lato (Rico: chi non sa della rotella deve poter scorrere con le frecce; solo con il mouse) */
+var SCORRI={};
+function frecceHTML(){ return '<button type="button" class="freccia sx" tabindex="-1" aria-hidden="true" title="Indietro">'+ICONE.sx+'</button><button type="button" class="freccia dx" tabindex="-1" aria-hidden="true" title="Avanti">'+ICONE.dx+'</button>'; }
+function segnaStriscia(fl){ var a=fl.scrollLeft>2, b=fl.scrollLeft+fl.clientWidth<fl.scrollWidth-2, w=fl.parentNode;
+  fl.classList.toggle('continua',b); fl.classList.toggle('da-sx',a);
+  if(w&&w.classList.contains('striscia')){ w.classList.toggle('scorre',fl.scrollWidth>fl.clientWidth+2); w.classList.toggle('a-sx',a); w.classList.toggle('a-dx',b);
+    w.querySelector('.freccia.sx').disabled=!a; w.querySelector('.freccia.dx').disabled=!b; } }
+/* il bottone scelto si vede intero, fuori dallo spazio delle frecce; se è più largo, il primo va all'inizio, l'ultimo alla fine, gli altri subito dopo la freccia sinistra */
+function mostraInStriscia(fl,b){ var m=margineStriscia(fl), f=fl.getBoundingClientRect(), r=b.getBoundingClientRect(), x=r.left-f.left;
+  if(r.width>fl.clientWidth-2*m){ if(!b.previousElementSibling) fl.scrollLeft=0; else if(!b.nextElementSibling) fl.scrollLeft=fl.scrollWidth; else fl.scrollLeft+=x-m; }
+  else if(x<m||x+r.width>fl.clientWidth-m) fl.scrollLeft+=x-(fl.clientWidth-r.width)/2; }
+/* un clic porta il primo bottone tagliato a destra subito dopo la sfumatura di sinistra (e viceversa), spostando almeno un terzo della striscia: nessun bottone resta a metà sotto la freccia */
+function margineStriscia(fl){ var p=getComputedStyle(fl).scrollPaddingLeft; return /%$/.test(p)?parseFloat(p)/100*fl.clientWidth:(parseFloat(p)||0); }
+function metaFreccia(fl,verso){ var m=margineStriscia(fl), f=fl.getBoundingClientRect(), b=[].slice.call(fl.children), t=null, i, r, x, poco=(fl.clientWidth-2*m)/3;
+  if(verso>0){ for(i=0;i<b.length;i++){ r=b[i].getBoundingClientRect(); x=r.left-f.left; if(x+r.width>fl.clientWidth-m+1&&x-m>=poco){ t=fl.scrollLeft+x-m; break; } } if(t===null) t=fl.scrollWidth; }
+  else { for(i=b.length-1;i>=0;i--){ r=b[i].getBoundingClientRect(); x=r.left-f.left; if(x<m-1&&(fl.clientWidth-m)-(x+r.width)>=poco){ t=fl.scrollLeft+x+r.width-(fl.clientWidth-m); break; } } if(t===null) t=0; }
+  if(verso>0&&t<=fl.scrollLeft+1) t=fl.scrollLeft+fl.clientWidth*0.8; if(verso<0&&t>=fl.scrollLeft-1) t=fl.scrollLeft-fl.clientWidth*0.8;
+  var max=fl.scrollWidth-fl.clientWidth; if(verso>0&&max-t<poco) t=max; if(verso<0&&t<poco) t=0; /* se resta poco, si va fino in fondo: niente ultimo passo di pochi pixel */
+  return Math.max(0,Math.min(t,max)); }
+function legaStriscia(fl,chiave,scelto){ if(!fl) return; var w=fl.parentNode; segnaStriscia(fl);
+  if(SCORRI[chiave]!=null) fl.scrollLeft=SCORRI[chiave];
+  var b=scelto&&fl.querySelector(scelto); if(b) mostraInStriscia(fl,b);
+  SCORRI[chiave]=fl.scrollLeft;
+  fl.onscroll=function(){ SCORRI[chiave]=fl.scrollLeft; segnaStriscia(fl); };
+  fl.onwheel=function(e){ var max=fl.scrollWidth-fl.clientWidth; if(Math.abs(e.deltaY)>Math.abs(e.deltaX)&&((e.deltaY>0&&fl.scrollLeft<max-1)||(e.deltaY<0&&fl.scrollLeft>1))){fl.scrollLeft+=e.deltaY;e.preventDefault();} };
+  if(w&&w.classList.contains('striscia')) $$('.freccia',w).forEach(function(f){ var verso=f.classList.contains('sx')?-1:1;
+    f.onmousedown=function(e){e.preventDefault();};
+    f.onclick=function(){ var piano=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches; fl.scrollTo({left:metaFreccia(fl,verso),behavior:piano?'auto':'smooth'}); }; });
+  segnaStriscia(fl); }
+window.addEventListener('resize',function(){ $$('.striscia>.filtri,.striscia>.giorni-striscia').forEach(segnaStriscia); });
 function disegnaRicettario(){
   var v=$('#vista');
   if(!S.sel&&S.modo==='leggi'&&window.innerWidth>760){var l=filtrate(), oggi=ricetteDiOggi(), primaOggi=oggi.map(ric).filter(function(r){return r&&l.indexOf(r)>=0;})[0]; if(primaOggi) S.sel=primaOggi.id; else if(l.length) S.sel=l[0].id;}
@@ -1854,12 +1914,12 @@ function disegnaElenco(){
   var nImp=eChef()&&S.imp&&S.imp.voci.length&&S.modo!=='incolla'?impStato().filter(function(s){return !s.gia&&!s.doppia&&!s.indice;}).length:0;
   if(nImp) h+='<div class="riga-incolla imp-banner"><span>'+(nImp===1?'Hai 1 ricetta da controllare.':'Hai '+nImp+' ricette da controllare.')+'</span><button class="btn quieto piccolo" id="imp-banner">Controllale</button></div>';
   var ppChef=primiPassiChefHTML(); h+=ppChef;
-  if(tutte.length&&oggiR.length) h+='<div class="oggi-menu"><small>Oggi nel menu</small><div class="filtri">'+oggiR.map(function(id){return '<button class="chipf" data-oggi-ric="'+id+'" aria-current="'+(id===S.sel)+'">'+esc(ric(id).nome)+'</button>';}).join('')+'</div></div>';
+  if(tutte.length&&oggiR.length) h+='<div class="oggi-menu"><small>Oggi nel menu</small><div class="striscia"><div class="filtri">'+oggiR.map(function(id){return '<button class="chipf" data-oggi-ric="'+id+'" aria-current="'+(id===S.sel)+'" title="'+esc(ric(id).nome)+'">'+esc(ric(id).nome)+'</button>';}).join('')+'</div>'+frecceHTML()+'</div></div>';
   if(tutte.length){
    h+='<div class="cerca">'+ICONE.cerca+'<input type="search" id="q" placeholder="Cerca ricetta o ingrediente" value="'+esc(S.q)+'" aria-label="Cerca una ricetta o un ingrediente">'+
       '<button class="btn-filtri" id="apri-filtri" aria-label="Filtri'+(nf?', '+nf+' attivi':'')+'">'+ICONE.filtri+'<span>Filtri</span>'+(nf?'<i>'+nf+'</i>':'')+'</button></div>'+
     (att.length?'<div class="filtri attivi">'+att.map(function(c){return '<button class="chipf scelto" data-togli-chip="'+esc(c[0])+'" aria-label="Togli '+esc(c[1])+'">'+esc(c[1])+ICONE.x+'</button>';}).join('')+'</div>':'')+
-    '<div class="filtri portate">'+['Tutte'].concat(portatePresenti).map(function(p){return '<button class="chipf" data-portata="'+esc(p)+'" aria-pressed="'+(S.portata===p)+'">'+(p==='Tutte'?'':'<span class="seg-pallino" style="--seg:'+colorePortata(p)+'"></span>')+esc(p)+'</button>';}).join('')+'</div>'+
+    '<div class="striscia"><div class="filtri portate">'+['Tutte'].concat(portatePresenti).map(function(p){return '<button class="chipf" data-portata="'+esc(p)+'" aria-pressed="'+(S.portata===p)+'">'+(p==='Tutte'?'':'<span class="seg-pallino" style="--seg:'+colorePortata(p)+'"></span>')+esc(p)+'</button>';}).join('')+'</div>'+frecceHTML()+'</div>'+
     '<div class="conta-riga"><p class="conta">'+contaTesto(lista,tutte)+'</p>'+(eChef()?'<button class="link icona-testo" id="esporta">'+ICONE.libro+'<span>Esporta il libro</span></button>':'')+'</div>'+
     '<div class="righe">'+righeHTML(lista)+'</div>';
   } else {
@@ -1876,9 +1936,7 @@ function disegnaElenco(){
       if(vuole!==S.sel||!l.length){ S.sel=vuole; esciDalleBasi(); S.tornaMenu=null; disegnaPagina(); $$('.riga-ric',el).forEach(function(b){b.setAttribute('aria-current',String(b.dataset.id===S.sel));}); } } }; }
   $$('[data-portata]',el).forEach(function(b){b.onclick=function(){S.portata=b.dataset.portata;disegnaElenco();};});
   /* portate: la rotella del mouse scorre di lato; la sfumatura a destra c'è solo se ce ne sono altre */
-  var rp=$('.portate',el); if(rp){ var segna=function(){rp.classList.toggle('continua',rp.scrollLeft+rp.clientWidth<rp.scrollWidth-2);};
-    rp.onwheel=function(e){ if(Math.abs(e.deltaY)>Math.abs(e.deltaX)&&rp.scrollWidth>rp.clientWidth){rp.scrollLeft+=e.deltaY;e.preventDefault();} };
-    rp.onscroll=segna; segna(); var on=$('[aria-pressed="true"]',rp); if(on&&on.offsetLeft>rp.clientWidth) rp.scrollLeft=on.offsetLeft-rp.clientWidth/2; segna(); }
+  legaStriscia($('.portate',el),'portate','[aria-pressed="true"]');
   $$('[data-togli-chip]',el).forEach(function(b){b.onclick=function(){togliChip(b.dataset.togliChip);disegnaElenco();var f=$('#apri-filtri');if(f)f.focus();};});
   var af=$('#apri-filtri'); if(af) af.onclick=function(){apriFiltri();};
   legaRighe(el);
@@ -1886,9 +1944,7 @@ function disegnaElenco(){
   $$('[data-nuova]',el).forEach(function(b){b.onclick=function(){ if(b.dataset.nuova==='scrivi') nuovaRicetta(); else apriImporta(); };});
   if($('#esporta')) $('#esporta').onclick=function(){esportaLibro();};
   if($('#imp-banner',el)) $('#imp-banner',el).onclick=apriImporta;
-  (function(){ var fl=$('.oggi-menu .filtri',el); if(!fl) return; var segna=function(){fl.classList.toggle('continua',fl.scrollLeft+fl.clientWidth<fl.scrollWidth-2);fl.classList.toggle('da-sx',fl.scrollLeft>2);};
-    var cur=$('[aria-current="true"]',fl); if(cur&&cur.offsetLeft-fl.offsetLeft+cur.offsetWidth>fl.clientWidth) fl.scrollLeft=cur.offsetLeft-fl.offsetLeft-(fl.clientWidth-cur.offsetWidth)/2;
-    fl.onscroll=segna; fl.onwheel=function(e){ if(Math.abs(e.deltaY)>Math.abs(e.deltaX)&&fl.scrollWidth>fl.clientWidth){fl.scrollLeft+=e.deltaY;e.preventDefault();} }; segna(); })();
+  legaStriscia($('.oggi-menu .filtri',el),'oggi','[aria-current="true"]');
   $$('[data-oggi-ric]',el).forEach(function(b){b.onclick=function(){pulisciVuota();S.sel=b.dataset.oggiRic;S.modo='leggi';esciDalleBasi();S.tornaMenu=null;S.selPrima=null;disegnaRicettario();if(window.innerWidth<=760)window.scrollTo(0,0);};});
   if($('#prima',el)) $('#prima',el).onclick=nuovaRicetta;
   if($('#prima-incolla',el)) $('#prima-incolla',el).onclick=apriImporta;
@@ -2294,10 +2350,10 @@ function disegnaOggi(){
     '<div class="testa-elenco"><div class="titolo-elenco">'+bottoneLato()+'<h2>Menu del giorno</h2></div>'+
      '<div class="testa-azioni"><button class="btn quieto piccolo icona-testo" id="qr-tavoli">'+ICONE.qr+'<span>QR dei tavoli</span></button>'+(eChef()?'<button class="btn quieto piccolo" id="apri-preparare">Da preparare</button>':'')+'<button class="btn quieto piccolo" id="apri-spesa">Lista della spesa</button></div></div>'+
     primiPassiHTML()+
-    '<div class="giorni-striscia">'+g.map(function(d){ var dd=dataDa(d.k);
+    '<div class="striscia alta"><div class="giorni-striscia">'+g.map(function(d){ var dd=dataDa(d.k);
       var fe=festivo(d.k), va=inFerie(d.k)&&!(S.locale.eccezioni||{})[d.k];
       var stati=chiuso(d.k)?(va?'chiuso per ferie':'chiuso'):serviziDi(d.k).map(function(s){return nomeServ(s).toLowerCase()+': '+parolaServ(d.k,s);}).join(', ');
-      return '<button class="giorno-tab" data-giorno="'+d.k+'" aria-pressed="'+(d.k===k)+'" aria-label="'+esc(d.data)+': '+stati+'"><small>'+(d.nome==='Oggi'||d.nome==='Domani'?d.nome:'&nbsp;')+'</small><b>'+GIORNI_SETT[dd.getDay()].slice(0,3)+' '+dd.getDate()+'</b>'+righeGiorno(d.k)+(fe?'<small class="festivo">'+esc(fe)+'</small>':'')+'</button>';}).join('')+'</div>'+
+      return '<button class="giorno-tab" data-giorno="'+d.k+'" aria-pressed="'+(d.k===k)+'" aria-label="'+esc(d.data)+': '+stati+'"><small>'+(d.nome==='Oggi'||d.nome==='Domani'?d.nome:'&nbsp;')+'</small><b>'+GIORNI_SETT[dd.getDay()].slice(0,3)+' '+dd.getDate()+'</b>'+righeGiorno(d.k)+(fe?'<small class="festivo">'+esc(fe)+'</small>':'')+'</button>';}).join('')+'</div>'+frecceHTML()+'</div>'+
     (function(){ var o=chiaveGiorno(new Date()), pr=[]; for(var i=7;i<=30;i++){ var kk=piuGiorni(o,i), f=festivo(kk); if(f&&!chiuso(kk)) pr.push(f+', '+GIORNI_SETT[dataDa(kk).getDay()]+' '+dataCorta(kk).replace(/\.$/,'')); }
       return pr.length&&S.ruolo!=='chef'?'<p class="auto-nota festivi-in-arrivo">Festivi in arrivo in Ticino: '+esc(pr.slice(0,2).join('; '))+'. Nei giorni di apertura: siete aperti? Lo decidi dal giorno, quando compare.</p>':''; })()+
     (function(){ var ca=costoAltoSettimana().filter(function(x){return x.k!==k;}); return ca.length?'<p class="guida da-fare costo-alto"><b>Costo merce sopra il '+Math.round(MERCE_ALTA*100)+'\u00a0% negli altri giorni:</b> '+ca.slice(0,3).map(function(x){return esc(x.nome.toLowerCase())+' ('+esc(giornoParola2(x.k))+', '+Math.round(x.q*100)+'\u00a0%)';}).join('; ')+(ca.length>3?' e altri '+(ca.length-3):'')+'. <button class="link" data-vai-costo="'+ca[0].k+'">Vedi</button></p>':''; })()+
@@ -2435,6 +2491,7 @@ function legaOggi(k){
   $$('[data-vai-domani]',v).forEach(function(b){ b.onclick=function(){ S.oggiGiorno=b.dataset.vaiDomani; S.oggiAperto=null; S.compAperta=null; disegnaOggi(); var x=$('[data-giorno="'+S.oggiGiorno+'"]'); if(x) x.focus(); }; });
   $$('[data-giorno]',v).forEach(function(b){b.onclick=function(){S.oggiGiorno=b.dataset.giorno;S.oggiAperto=null;S.compAperta=null;disegnaOggi();var x=$('[data-giorno="'+S.oggiGiorno+'"]');if(x)x.focus();};});
   /* frecce sulla striscia dei giorni */
+  legaStriscia($('.giorni-striscia',v),'giorni','[aria-pressed="true"]');
   var st=$('.giorni-striscia',v); if(st) st.onkeydown=function(e){ if(e.key!=='ArrowRight'&&e.key!=='ArrowLeft') return; var g=giorni().map(function(d){return d.k;}),i=g.indexOf(S.oggiGiorno)+(e.key==='ArrowRight'?1:-1); if(i<0||i>=g.length) return; e.preventDefault(); S.oggiGiorno=g[i]; disegnaOggi(); $('[data-giorno="'+g[i]+'"]').focus(); };
   if($('#attiva-cena')) $('#attiva-cena').onclick=function(){S.locale.cena=true; if(!S.locale.orari.cena) S.locale.orari.cena=['18.30','22.00']; disegnaOggi(); toast('Cena aggiunta, dalle '+S.locale.orari.cena[0]+' alle '+S.locale.orari.cena[1]+'.');};
   $$('[data-aggiungi]',v).forEach(function(b){b.onclick=function(){apriScelta(k,b.dataset.aggiungi);};});
